@@ -1,0 +1,2997 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Programa Mujeres al Centro</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/simple-statistics@7.8.3/dist/simple-statistics.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0c1221;--panel:#151d2e;--panel2:#1a2438;--border:#243049;--border2:#2d3a54;
+      --blue:#e4007c;--blue-g:linear-gradient(135deg,#e4007c,#ff409f);
+      --pink:#e8457e;--pink-g:linear-gradient(135deg,#e8457e,#f472b6);
+      --purple:#8b5cf6;--amber:#f59e0b;--emerald:#10b981;--cyan:#06b6d4;--red:#ef4444;
+      --t1:#f1f5f9;--t2:#94a3b8;--t3:#64748b;--t4:#475569;
+      --radius:12px;--radius-sm:8px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t1);height:100vh;display:flex;overflow:hidden}
+
+    /* ═══ SIDEBAR (Color Guinda Institucional con Acentos) ═══ */
+    #sidebar{width:310px;height:100%;background:linear-gradient(180deg,#4d0a1b 0%,#3b0614 55%,#26020c 100%);border-right:1px solid rgba(160,20,60,.35);box-shadow:6px 0 32px rgba(0,0,0,.55);display:flex;flex-direction:column;flex-shrink:0;z-index:900;transition:margin .35s cubic-bezier(.4,0,.2,1);position:relative}
+    #sidebar::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 15% 15%,rgba(90,10,30,.4),transparent 60%),radial-gradient(circle at 85% 85%,rgba(50,5,15,.6),transparent 60%);pointer-events:none;z-index:0}
+    #sidebar>*{position:relative;z-index:1}
+    #sidebar.collapsed{margin-left:-310px}
+
+    .sb-head{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.06);position:relative;background:rgba(0,0,0,.15)}
+    .sb-tag{display:inline-flex;align-items:center;gap:5px;font-size:8.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#f3d5df;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);padding:3px 8px;border-radius:99px;margin-bottom:6px}
+    .sb-brand{font-size:16px;font-weight:900;letter-spacing:-.02em;line-height:1.25;color:#ffffff;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+    .sb-sub{font-size:10.5px;color:#d8b5c0;margin-top:4px;font-weight:500;display:flex;align-items:center;gap:4px}
+
+    .sb-tabs{display:flex;gap:5px;margin-top:12px;background:rgba(0,0,0,.45);padding:3px;border-radius:10px;border:1px solid rgba(228,0,124,.22)}
+    .sb-tab{flex:1;padding:7px 10px;border:none;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s ease;background:transparent;color:#d8a8b8;font-family:inherit}
+    .sb-tab:hover{color:#fff;background:rgba(228,0,124,.18)}
+    .sb-tab.on{background:linear-gradient(135deg,#e4007c 0%,#ff3399 100%);color:#ffffff;box-shadow:0 4px 16px rgba(228,0,124,.55);border:1px solid rgba(255,120,190,.5);font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+
+    /* Barra de búsqueda y acciones rápidas */
+    .sb-filter-bar{padding:10px 14px 6px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid rgba(255,255,255,.05);background:rgba(0,0,0,.22)}
+    .sb-search-wrap{position:relative;display:flex;align-items:center}
+    .sb-search-icon{position:absolute;left:10px;color:#ad8290;pointer-events:none}
+    .sb-search-input{width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:6px 28px 6px 30px;color:#fff;font-size:11px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
+    .sb-search-input::placeholder{color:#8f6976}
+    .sb-search-input:focus{border-color:rgba(228,0,124,.5);box-shadow:0 0 0 2px rgba(228,0,124,.15);background:rgba(0,0,0,.45)}
+    .sb-search-clear{position:absolute;right:8px;background:none;border:none;color:#ad8290;cursor:pointer;font-size:12px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+    .sb-search-clear:hover{color:#fff;background:rgba(255,255,255,.15)}
+    .sb-quick-actions{display:flex;align-items:center;justify-content:space-between;font-size:10px}
+    .sb-count-badge{color:#f5c6d6;font-weight:700;font-size:10px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);padding:2px 7px;border-radius:99px}
+    .sb-action-btn{background:transparent;border:none;color:#caa4b0;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:color .15s}
+    .sb-action-btn:hover{color:#fff;text-decoration:underline}
+
+    .sb-layers{flex:1;overflow-y:auto;padding:8px 12px 16px;display:flex;flex-direction:column;gap:5px}
+    .sb-layers::-webkit-scrollbar{width:4px}
+    .sb-layers::-webkit-scrollbar-track{background:transparent}
+    .sb-layers::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+    .sb-layers::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.25)}
+
+    /* Separadores de sección */
+    .sb-section{display:flex;align-items:center;gap:8px;padding:8px 4px 4px;margin-top:4px}
+    .sb-section:first-child{margin-top:0;padding-top:2px}
+    .sb-section-label{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:1.1px;color:rgba(240,195,210,.45)}
+    .sb-section-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(240,195,210,.18),transparent)}
+
+    /* Tarjetas de capa */
+    .ly{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;cursor:pointer;transition:all .18s ease;position:relative;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.05);user-select:none}
+    .ly:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);transform:translateX(2px)}
+    .ly.on{background:rgba(90,12,32,.75);border-color:rgba(228,0,124,.45);box-shadow:0 3px 14px rgba(0,0,0,.45),inset 0 0 0 1px rgba(228,0,124,.15)}
+
+    .ly-icon-box{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .2s ease;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+    .ly:hover .ly-icon-box{transform:scale(1.08)}
+    .ly-icon{font-size:15px;line-height:1}
+
+    .ly-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+    .ly-title-row{display:flex;align-items:center;gap:6px}
+    .ly-name{font-size:12px;font-weight:700;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+    .ly-badge{font-size:8px;font-weight:800;letter-spacing:.4px;padding:1px 5px;border-radius:4px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.06);color:#d1b5c0;flex-shrink:0}
+    .ly-sub{font-size:9.5px;color:#caa4b0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+
+    .ly-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+
+    /* Switch toggle estilizado */
+    .ly-check{-webkit-appearance:none;appearance:none;width:32px;height:18px;background:rgba(0,0,0,.4);border-radius:99px;cursor:pointer;flex-shrink:0;position:relative;transition:all .22s cubic-bezier(.4,0,.2,1);border:1px solid rgba(255,255,255,.12);outline:none;margin:0}
+    .ly-check::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;background:rgba(255,255,255,.65);border-radius:50%;transition:all .22s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+    .ly-check:checked{background:linear-gradient(135deg,#9e133c,#e4007c);border-color:rgba(228,0,124,.7);box-shadow:0 0 10px rgba(158,19,60,.5)}
+    .ly-check:checked::after{left:16px;background:#ffffff;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+    .ly-check:hover{border-color:rgba(255,255,255,.25)}
+
+    .ly-loader{width:12px;height:12px;border:2px solid rgba(255,255,255,.2);border-top-color:#e4007c;border-radius:50%;animation:spin .7s linear infinite;display:none}
+    .ly.loading .ly-loader{display:block}
+
+    /* Logo inferior en sidebar */
+    .sb-footer{padding:10px 14px 12px;margin-top:auto;border-top:1px solid rgba(255,255,255,.06);background:linear-gradient(180deg,rgba(0,0,0,.25),rgba(0,0,0,.5));display:flex;flex-direction:column;align-items:center;gap:6px}
+    .sb-logo-card{width:100%;background:linear-gradient(145deg,#ffffff,#f6ecf0);border-radius:14px;padding:8px 12px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,.4),0 0 0 1px rgba(160,20,60,.25),inset 0 1px 0 rgba(255,255,255,.9);overflow:hidden;transition:transform .22s ease,box-shadow .22s ease}
+    .sb-logo-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.5),0 0 0 1px rgba(228,0,124,.4)}
+    .sb-logo-img{width:100%;height:auto;max-height:64px;object-fit:contain;border-radius:8px;display:block}
+    .sb-footer-copy{font-size:8.5px;color:rgba(255,255,255,.3);font-weight:600;letter-spacing:.3px;text-align:center}
+
+    /* ═══ TOGGLE SIDEBAR ═══ */
+    #btn-sb-toggle{position:absolute;top:50%;z-index:901;width:22px;height:48px;background:linear-gradient(180deg,#4d0a1b,#3b0614);border:1px solid rgba(160,20,60,.35);border-left:none;border-radius:0 10px 10px 0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#e8b5c4;transition:left .35s cubic-bezier(.4,0,.2,1),background .2s,box-shadow .2s;left:310px;transform:translateY(-50%)}
+    #sidebar.collapsed~#btn-sb-toggle{left:0}
+    #btn-sb-toggle:hover{color:#ffffff;background:linear-gradient(135deg,#7e102f,#a0143c);border-color:#e4007c;box-shadow:0 0 14px rgba(126,16,47,.6)}
+    #btn-sb-toggle svg{transition:transform .35s}
+    #sidebar.collapsed~#btn-sb-toggle svg{transform:rotate(180deg)}
+
+    /* ═══ MAPA ═══ */
+    #main{flex:1;position:relative;overflow:hidden}
+    #map{width:100%;height:100%;z-index:1;background:var(--bg)}
+    .leaflet-control-attribution{display:none!important}
+
+    /* ═══ PANEL CAPAS ACTIVAS (top-right) ═══ */
+    .fp{position:absolute;z-index:800;background:rgba(21,29,46,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 12px 40px rgba(0,0,0,.5);overflow:hidden;transform-origin:center center;will-change:transform,opacity,border-radius}
+    #p-capas{top:16px;right:74px;width:310px;max-height:calc(100vh - 40px)}
+    #p-buffer{top:16px;right:74px;width:320px;display:none}
+    #p-attr{bottom:16px;right:74px;width:380px;max-height:480px;transition:width .25s cubic-bezier(.4,0,.2,1),max-height .25s cubic-bezier(.4,0,.2,1),transform .2s ease}
+    #p-attr.expanded{width:min(880px, calc(100vw - 120px));max-height:calc(100vh - 80px);z-index:860}
+    #p-legend{bottom:24px;left:20px;width:260px;max-height:420px;display:none}
+
+    /* ═══ TABLA DE ATRIBUTOS ═══ */
+    .attr-tabs{display:flex;gap:4px;background:rgba(0,0,0,.35);padding:3px;border-radius:8px;border:1px solid rgba(255,255,255,.07);margin-bottom:6px}
+    .attr-tab{flex:1;padding:5px 8px;font-size:10.5px;font-weight:700;border:none;border-radius:6px;background:transparent;color:var(--t3);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:4px;font-family:inherit}
+    .attr-tab:hover{color:#fff;background:rgba(255,255,255,.05)}
+    .attr-tab.active{background:linear-gradient(135deg,#e4007c,#ff3399);color:#fff;box-shadow:0 2px 8px rgba(228,0,124,.35)}
+
+    .attr-tools{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+    .attr-search{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:10.5px;color:#fff;outline:none;font-family:inherit;transition:border-color .15s}
+    .attr-search:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(228,0,124,.2)}
+
+    .tbl-scroll-wrap{overflow:auto;max-height:300px;border-radius:8px;border:1px solid var(--border);background:rgba(12,18,33,.6)}
+    #p-attr.expanded .tbl-scroll-wrap{max-height:calc(100vh - 230px)}
+    .tbl-scroll-wrap::-webkit-scrollbar{width:5px;height:5px}
+    .tbl-scroll-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+    /* Tablita de atributos del elemento */
+    .tbl-attr{width:100%;border-collapse:collapse;font-size:11px}
+    .tbl-attr th{background:#162035;color:#ff99cb;padding:7px 10px;text-align:left;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border)}
+    .tbl-attr td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--t1)}
+    .tbl-attr tr:nth-child(even){background:rgba(255,255,255,.02)}
+    .tbl-attr tr:hover{background:rgba(228,0,124,.12)}
+    .tbl-attr td.k-col{font-weight:700;color:#fce7ef;width:38%;word-break:break-word}
+    .tbl-attr td.v-col{font-weight:500;word-break:break-word}
+
+    /* Tablita completa de la capa */
+    .tbl-layer-grid{width:100%;border-collapse:collapse;font-size:10.5px;white-space:nowrap}
+    .tbl-layer-grid th{background:#162035;color:#ff99cb;padding:6px 8px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;border:1px solid var(--border);position:sticky;top:0;z-index:2}
+    .tbl-layer-grid td{padding:5px 8px;border:1px solid rgba(255,255,255,.05);color:var(--t1)}
+    .tbl-layer-grid tr:nth-child(even){background:rgba(255,255,255,.025)}
+    .tbl-layer-grid tr:hover{background:rgba(228,0,124,.18);cursor:pointer}
+
+    .tbl-badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:9.5px;font-weight:700}
+    .tbl-badge-num{background:rgba(45,127,249,.18);color:#93c5fd;border:1px solid rgba(45,127,249,.3)}
+    .tbl-badge-pink{background:rgba(228,0,124,.18);color:#ff99cb;border:1px solid rgba(228,0,124,.3)}
+
+    /* Herramienta Buffer */
+    .buf-radios-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+    .buf-rad-btn{padding:7px 0;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;color:var(--t2);font-size:10.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit}
+    .buf-rad-btn:hover{color:#fff;background:rgba(255,255,255,.1)}
+    .buf-rad-btn.active{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(228,0,124,.4)}
+    body.buffer-active #map{cursor:crosshair!important}
+
+    .fp-head{padding:11px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.04)}
+    .fp-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+    .fp-badge{background:rgba(228,0,124,.15);color:#ff66b2;border:1px solid rgba(228,0,124,.35);font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px}
+    .fp-min{background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:.15s}
+    .fp-min:hover{background:rgba(228,0,124,.15);color:#ff66b2}
+
+    .fp-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 120px);overflow-y:auto;scroll-behavior:smooth}
+    .fp-body::-webkit-scrollbar{width:3px}
+    .fp-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+    /* Chips de capas activas */
+    .ac-chip{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px;font-weight:600}
+    .ac-chip .ac-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .ac-chip .ac-label{flex:1;color:var(--t1)}
+    .ac-chip .ac-x{background:none;border:none;color:var(--t4);cursor:pointer;font-size:14px;padding:0 2px;border-radius:4px}
+    .ac-chip .ac-x:hover{color:var(--red);background:rgba(239,68,68,.1)}
+    .ac-empty{text-align:center;padding:20px;color:var(--t3);font-size:12px}
+
+    /* Select estilizado */
+    .sel{width:100%;background:rgba(15,23,42,.8);color:var(--t1);border:1px solid rgba(51,65,85,.5);padding:8px 10px;border-radius:10px;font-size:11.5px;font-weight:600;cursor:pointer;outline:none;font-family:inherit;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+    .sel:focus{border-color:rgba(228,0,124,.6);box-shadow:0 0 0 2px rgba(228,0,124,.15)}
+    .sel-label{font-size:9px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+
+    /* Botones de acción */
+    .act-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+    .act-btn{padding:8px;border-radius:var(--radius-sm);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer;border:none;transition:.15s;font-family:inherit}
+    .act-pri{background:var(--blue);color:#fff;box-shadow:0 3px 12px rgba(228,0,124,.35)}
+    .act-pri:hover{background:#ff1493}
+    .act-sec{background:var(--bg);border:1px solid var(--border);color:var(--t1)}
+    .act-sec:hover{background:var(--panel2)}
+
+    /* Botón de descarga GeoJSON en rosa mexicano */
+    .cls-btn-dl{background:linear-gradient(135deg,#e4007c,#ff3399);color:#ffffff;border:none;border-radius:var(--radius-sm);padding:8px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:all .18s ease;font-family:inherit;box-shadow:0 3px 12px rgba(228,0,124,.35)}
+    .cls-btn-dl:hover{background:linear-gradient(135deg,#ff1493,#ff55aa);box-shadow:0 4px 16px rgba(228,0,124,.55);transform:translateY(-1px)}
+    .cls-btn-dl:active{transform:scale(.97)}
+    .cls-btn-dl svg{stroke:#ffffff}
+
+    #btn-buf-exp-csv{background:linear-gradient(135deg,rgba(228,0,124,.2),rgba(255,51,153,.15));border:1px solid rgba(228,0,124,.4);color:#ff99cb;font-weight:700;border-radius:var(--radius-sm);cursor:pointer;transition:all .2s ease}
+    #btn-buf-exp-csv:hover{background:linear-gradient(135deg,#e4007c,#ff3399);color:#ffffff;border-color:#ff409f;box-shadow:0 3px 12px rgba(228,0,124,.4)}
+
+    /* ═══ FABs MAPA (Rosa Mexicano #e4007c - 100% relleno sólido) ═══ */
+    .map-fabs{position:absolute;z-index:850;top:16px;right:16px;display:flex;flex-direction:column;gap:12px}
+    .map-fab{width:48px;height:48px;border-radius:50%;background:#e4007c;border:none;display:flex;align-items:center;justify-content:center;color:#ffffff;cursor:pointer;box-shadow:0 4px 18px rgba(228,0,124,.55);transition:transform .2s cubic-bezier(.175,.885,.32,1.275),box-shadow .2s ease,background .2s ease;position:relative;padding:0;outline:none}
+    .map-fab:hover{transform:scale(1.12);background:#ff1493;box-shadow:0 6px 24px rgba(228,0,124,.75)}
+    .map-fab:active{transform:scale(.92)}
+    .map-fab.on{background:#d4006f;box-shadow:0 4px 20px rgba(228,0,124,.6),0 0 0 3px rgba(255,255,255,.9)}
+    .map-fab.pulse{animation:fab-pulse .45s cubic-bezier(.175,.885,.32,1.275)}
+    @keyframes fab-pulse{0%{transform:scale(1)}40%{transform:scale(1.28)}75%{transform:scale(.92)}100%{transform:scale(1)}}
+    .map-fab svg{pointer-events:none}
+    .map-fab-tip{position:absolute;right:calc(100% + 12px);left:auto;white-space:nowrap;background:rgba(15,23,42,.96);color:#f8fafc;font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px;border:1px solid rgba(228,0,124,.4);pointer-events:none;opacity:0;transform:translateX(6px);transition:all .2s ease;box-shadow:0 8px 24px rgba(0,0,0,.5);font-family:'Inter',system-ui,sans-serif;letter-spacing:.3px}
+    .map-fab:hover .map-fab-tip{opacity:1;transform:translateX(0)}
+
+    /* ═══ CONTROLES DE ZOOM EN ROSA MEXICANO ═══ */
+    .leaflet-control-zoom,
+    .leaflet-touch .leaflet-control-zoom{
+      border: none !important;
+      border-radius: 10px !important;
+      overflow: hidden !important;
+      box-shadow: 0 4px 18px rgba(228,0,124,.5) !important;
+    }
+    .leaflet-control-zoom a,
+    .leaflet-touch .leaflet-control-zoom a{
+      background: linear-gradient(135deg, #e4007c 0%, #ff3399 100%) !important;
+      color: #ffffff !important;
+      border: none !important;
+      border-bottom: 1px solid rgba(255,255,255,.25) !important;
+      width: 32px !important;
+      height: 32px !important;
+      line-height: 32px !important;
+      font-size: 18px !important;
+      font-weight: 800 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      transition: all .2s ease !important;
+      text-decoration: none !important;
+      box-shadow: none !important;
+    }
+    .leaflet-control-zoom a:last-child,
+    .leaflet-touch .leaflet-control-zoom a:last-child{
+      border-bottom: none !important;
+    }
+    .leaflet-control-zoom a:hover,
+    .leaflet-touch .leaflet-control-zoom a:hover{
+      background: linear-gradient(135deg, #ff1493 0%, #ff55aa 100%) !important;
+      color: #ffffff !important;
+      box-shadow: inset 0 0 8px rgba(255,255,255,.3) !important;
+    }
+    .leaflet-control-zoom a:active,
+    .leaflet-touch .leaflet-control-zoom a:active{
+      transform: scale(.92) !important;
+    }
+
+    /* Toast de carga */
+    #toast{position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(21,29,46,.95);border:1px solid var(--blue);padding:7px 18px;border-radius:99px;font-size:12px;font-weight:600;color:#fff;display:none;align-items:center;gap:8px;z-index:2000;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+    .spin-sm{width:14px;height:14px;border:2px solid rgba(255,255,255,.15);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* ═══ MODAL CLASIFICAR (IDÉNTICO A GEOVISOR) ═══ */
+    .classify-modal{position:fixed;inset:0;background-color:rgba(0,0,0,.68);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:2500;transition:opacity .2s ease}
+    .classify-modal.hidden{display:none!important}
+    .classify-card{background-color:var(--panel);border:1px solid var(--border);border-radius:var(--radius);width:450px;max-width:92%;box-shadow:0 24px 64px rgba(0,0,0,.65);display:flex;flex-direction:column;overflow:hidden;font-family:inherit}
+    .classify-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13.5px;color:var(--t1)}
+    .classify-close{background:none;border:none;color:var(--t3);cursor:pointer;font-size:15px;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+    .classify-close:hover{color:#fff;background:rgba(255,255,255,.08)}
+    .classify-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px;max-height:68vh;overflow-y:auto}
+    .classify-body::-webkit-scrollbar{width:4px}
+    .classify-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+    .classify-row{display:flex;flex-direction:column;gap:6px}
+    .cl-label{font-size:9.5px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+    .cl-select{width:100%;padding:8px 10px;background-color:rgba(15,23,42,.8);border:1px solid var(--border);color:var(--t1);border-radius:var(--radius-sm);font-size:11.5px;font-family:inherit;outline:none;cursor:pointer;transition:border-color .2s}
+    .cl-select:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(228,0,124,.2)}
+    .cl-radio-group{display:flex;gap:18px;flex-wrap:wrap}
+    .cl-radio{font-size:11.5px;font-weight:600;color:var(--t2);display:flex;align-items:center;gap:7px;cursor:pointer}
+    .cl-radio input[type="radio"]{accent-color:var(--blue);cursor:pointer}
+    .cl-classes-btns{display:flex;gap:5px}
+    .cl-class-btn{flex:1;padding:6px 0;background-color:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--t3);border-radius:var(--radius-sm);font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s}
+    .cl-class-btn:hover{color:#fff;background-color:rgba(255,255,255,.08)}
+    .cl-class-btn.active{background-color:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(228,0,124,.4)}
+    .cl-ramp-picker{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .cl-ramp-swatch{display:flex;align-items:center;height:32px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:4px 8px;gap:8px;cursor:pointer;transition:all .2s ease}
+    .cl-ramp-swatch:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.25);transform:translateY(-1px)}
+    .cl-ramp-swatch.active{background:rgba(228,0,124,.15);border-color:var(--blue)!important;box-shadow:0 0 0 2px rgba(228,0,124,.4)}
+    .cl-ramp-bar{display:flex;height:14px;width:60px;border-radius:3px;overflow:hidden;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+    .cl-ramp-bar span{display:block}
+    .cl-ramp-name{flex:1;font-size:10.5px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cl-legend{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 12px;margin-top:10px;border-top:1px dashed rgba(255,255,255,.12);padding-top:12px;max-height:140px;overflow-y:auto}
+    .cl-legend::-webkit-scrollbar{width:3px}
+    .cl-legend::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:2px}
+    .cl-legend-item{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--t1);font-weight:500}
+    .cl-legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25),0 1px 3px rgba(0,0,0,.4)}
+    .cl-legend-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cl-legend-more{grid-column:1/-1;text-align:center;font-size:9.5px;color:var(--blue);margin-top:4px;font-style:italic;font-weight:600}
+    .classify-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;background-color:rgba(0,0,0,.15)}
+    .cl-btn-ghost{padding:8px 14px;font-size:11px;font-weight:700;font-family:inherit;border-radius:var(--radius-sm);cursor:pointer;background:transparent;color:var(--t2);border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;gap:5px;transition:all .2s}
+    .cl-btn-ghost:hover{color:#fff;background-color:rgba(255,255,255,.06);border-color:rgba(255,255,255,.2)}
+    .cl-btn-apply{padding:8px 16px;font-size:11px;font-weight:700;font-family:inherit;border-radius:var(--radius-sm);cursor:pointer;background:var(--blue);color:#fff;border:none;display:inline-flex;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 10px rgba(228,0,124,.4);transition:all .2s}
+    .cl-btn-apply:hover{background:#ff1493}
+    .cls-type-badge{font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:99px;letter-spacing:.3px;transition:.2s}
+    .cls-type-badge.numeric{background:rgba(228,0,124,.15);color:#ff66b2;border:1px solid rgba(228,0,124,.3)}
+    .cls-type-badge.categorical{background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.25)}
+    .hidden{display:none!important}
+
+    /* ═══ POPUPS LEAFLET MEJORADOS ═══ */
+    .leaflet-popup-content-wrapper{background:var(--panel)!important;color:var(--t1)!important;border:1px solid var(--border)!important;border-radius:14px!important;box-shadow:0 16px 48px rgba(0,0,0,.6)!important;padding:0!important;overflow:hidden}
+    .leaflet-popup-tip{background:var(--panel)!important}
+    .leaflet-popup-content{margin:0!important;padding:0!important;font-size:12px;line-height:1.5;min-width:220px}
+    .leaflet-popup-close-button{color:var(--t3)!important;font-size:18px!important;top:6px!important;right:8px!important}
+    .leaflet-popup-close-button:hover{color:#e4007c!important}
+
+    .pop{overflow:hidden}
+    .pop-head{padding:10px 14px;display:flex;align-items:center;gap:8px}
+    .pop-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .pop-type{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+    .pop-title{padding:0 14px;font-size:14px;font-weight:800;color:#fff;line-height:1.3}
+    .pop-sub{padding:2px 14px 0;font-size:11px;color:var(--t3)}
+    .pop-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);margin-top:10px}
+    .pop-cell{background:var(--panel);padding:8px 12px}
+    .pop-cell-label{font-size:9px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.3px}
+    .pop-cell-val{font-size:14px;font-weight:800;margin-top:1px}
+
+    /* ═══ DASHBOARD ═══ */
+    #dash{position:absolute;inset:0;background:var(--bg);z-index:1500;overflow-y:auto;padding:28px 36px 48px;display:none;scroll-behavior:smooth}
+    #dash.on{display:block}
+    #main.dash-mode .map-fabs,
+    #main.dash-mode .fp,
+    #main.dash-mode .leaflet-control-container,
+    #main.dash-mode #toast{display:none!important}
+
+    .dash-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:22px;flex-wrap:wrap}
+    .dash-title{font-size:22px;font-weight:900;letter-spacing:-.02em;background:linear-gradient(135deg,#ffffff 0%,#ff99cc 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .dash-sub{font-size:12px;color:var(--t3);margin-top:3px}
+
+    .dash-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .dash-sel{background:var(--panel);color:var(--t1);border:1px solid var(--border);padding:8px 12px;border-radius:10px;font-size:12px;font-weight:600;font-family:inherit;outline:none;cursor:pointer;transition:.2s}
+    .dash-sel:hover{border-color:rgba(228,0,124,.5)}
+    .dash-sel:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(228,0,124,.2)}
+    .dash-btn-exp{background:rgba(255,255,255,.05);color:var(--t1);border:1px solid var(--border);padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;transition:.15s;font-family:inherit}
+    .dash-btn-exp:hover{background:rgba(228,0,124,.15);border-color:var(--blue);color:#ff66b2}
+
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:22px}
+    .kpi{background:var(--panel);border:1px solid var(--border);padding:16px 18px;border-radius:var(--radius);position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+    .kpi::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;border-radius:4px 0 0 4px}
+    .kpi-label{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px}
+    .kpi-val{font-size:26px;font-weight:900;margin-top:3px;letter-spacing:-.02em}
+    .kpi-note{font-size:11px;color:var(--t4);margin-top:2px}
+
+    .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;margin-bottom:20px}
+    .chart-card{background:var(--panel);border:1px solid var(--border);padding:16px 18px;border-radius:var(--radius);display:flex;flex-direction:column;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+    .chart-card h4{font-size:12.5px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;color:var(--t1)}
+    .chart-card h4 span{font-size:10px;color:var(--t3);font-weight:500}
+    .chart-canvas-wrap{position:relative;width:100%;height:220px}
+
+    /* HEATMAP CARD */
+    .heatmap-card{background:var(--panel);border:1px solid var(--border);padding:20px 22px;border-radius:var(--radius);margin-top:14px;display:grid;grid-template-columns:1fr 280px;gap:22px;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+    @media(max-width:1080px){.heatmap-card{grid-template-columns:1fr}}
+    .heatmap-wrap{overflow-x:auto}
+    .heatmap-table{width:100%;border-collapse:separate;border-spacing:5px}
+    .heatmap-table th{font-size:10px;font-weight:700;color:var(--t3);padding:6px;text-align:center;white-space:nowrap}
+    .heatmap-table th.var-y{text-align:right;padding-right:12px;color:var(--t2);font-weight:700}
+    .hm-cell{height:36px;min-width:38px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,outline .15s ease}
+    .hm-cell:hover{transform:scale(1.18);box-shadow:0 4px 16px rgba(0,0,0,.6);z-index:20;outline:2px solid #ff7cb8}
+    .hm-detail{background:rgba(12,18,33,.7);border:1px solid var(--border);border-radius:12px;padding:18px;display:flex;flex-direction:column;justify-content:center}
+    .hm-detail-tag{font-size:10px;font-weight:800;text-transform:uppercase;color:var(--blue);letter-spacing:.6px}
+    .hm-detail-val{font-size:26px;font-weight:900;margin:4px 0 6px;color:#fff}
+    .hm-detail-title{font-size:13px;font-weight:800;color:var(--t1);margin-bottom:6px}
+    .hm-detail-desc{font-size:11.5px;color:var(--t2);line-height:1.55}
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="sb-head">
+    <div class="sb-tag">Centro • Tabasco</div>
+    <div class="sb-brand">Programa Mujeres al Centro</div>
+    <div class="sb-sub">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span>Municipio de Centro, Tabasco</span>
+    </div>
+    <div class="sb-tabs">
+      <button class="sb-tab on" id="tab-map">🗺️ Mapa</button>
+      <button class="sb-tab" id="tab-dash">📊 Dashboard</button>
+    </div>
+  </div>
+
+  <!-- Barra de búsqueda y conteo de capas -->
+  <div class="sb-filter-bar">
+    <div class="sb-search-wrap">
+      <svg class="sb-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="ly-filter-input" class="sb-search-input" placeholder="Filtrar capas...">
+      <button id="ly-filter-clear" class="sb-search-clear" style="display:none">✕</button>
+    </div>
+    <div class="sb-quick-actions">
+      <span id="sb-count-badge" class="sb-count-badge">0 activas</span>
+      <button id="btn-clear-layers" class="sb-action-btn" title="Desactivar todas las capas">Desactivar todas</button>
+    </div>
+  </div>
+
+  <div class="sb-layers" id="sb-layers">
+    <!-- Sección: Capas de Análisis -->
+    <div class="sb-section">
+      <span class="sb-section-label">Capas de Análisis</span>
+      <span class="sb-section-line"></span>
+    </div>
+
+    <div class="ly" data-id="colonias">
+      <div class="ly-icon-box" style="background:rgba(0,0,0,.3);border:1px solid rgba(232,69,126,.3);color:#e8457e">
+        <span class="ly-icon">🏙️</span>
+      </div>
+      <div class="ly-info">
+        <div class="ly-title-row">
+          <span class="ly-name">Colonias Urbanas</span>
+          <span class="ly-badge">POLÍGONO</span>
+        </div>
+        <span class="ly-sub">Área urbana y conurbada</span>
+      </div>
+      <div class="ly-right">
+        <span class="ly-loader"></span>
+        <input type="checkbox" class="ly-check" data-id="colonias">
+      </div>
+    </div>
+
+    <div class="ly" data-id="sedes">
+      <div class="ly-icon-box" style="background:rgba(0,0,0,.3);border:1px solid rgba(45,127,249,.3);color:#2d7ff9">
+        <span class="ly-icon">🏫</span>
+      </div>
+      <div class="ly-info">
+        <div class="ly-title-row">
+          <span class="ly-name">Sedes de Formación</span>
+          <span class="ly-badge">PUNTOS</span>
+        </div>
+        <span class="ly-sub">Centros de capacitación</span>
+      </div>
+      <div class="ly-right">
+        <span class="ly-loader"></span>
+        <input type="checkbox" class="ly-check" data-id="sedes">
+      </div>
+    </div>
+
+    <div class="ly" data-id="nucleos">
+      <div class="ly-icon-box" style="background:rgba(0,0,0,.3);border:1px solid rgba(245,158,11,.3);color:#f59e0b">
+        <span class="ly-icon">🌾</span>
+      </div>
+      <div class="ly-info">
+        <div class="ly-title-row">
+          <span class="ly-name">Núcleos y Ejidos</span>
+          <span class="ly-badge">POLÍGONO</span>
+        </div>
+        <span class="ly-sub">Ejidos y comunidades rurales</span>
+      </div>
+      <div class="ly-right">
+        <span class="ly-loader"></span>
+        <input type="checkbox" class="ly-check" data-id="nucleos">
+      </div>
+    </div>
+
+    <div class="ly" data-id="vinculos">
+      <div class="ly-icon-box" style="background:rgba(0,0,0,.3);border:1px solid rgba(139,92,246,.3);color:#8b5cf6">
+        <span class="ly-icon">🔗</span>
+      </div>
+      <div class="ly-info">
+        <div class="ly-title-row">
+          <span class="ly-name">Flujos de Movilidad</span>
+          <span class="ly-badge">LÍNEAS</span>
+        </div>
+        <span class="ly-sub">Vínculos origen-destino</span>
+      </div>
+      <div class="ly-right">
+        <span class="ly-loader"></span>
+        <input type="checkbox" class="ly-check" data-id="vinculos">
+      </div>
+    </div>
+
+    <div class="ly" data-id="municipios">
+      <div class="ly-icon-box" style="background:rgba(0,0,0,.3);border:1px solid rgba(6,182,212,.3);color:#06b6d4">
+        <span class="ly-icon">🏛️</span>
+      </div>
+      <div class="ly-info">
+        <div class="ly-title-row">
+          <span class="ly-name">Municipios Tabasco</span>
+          <span class="ly-badge">LÍMITES</span>
+        </div>
+        <span class="ly-sub">División política estatal</span>
+      </div>
+      <div class="ly-right">
+        <span class="ly-loader"></span>
+        <input type="checkbox" class="ly-check" data-id="municipios">
+      </div>
+    </div>
+
+    <!-- Sección: Capas Geográficas -->
+    <div class="sb-section">
+      <span class="sb-section-label">Capas Geográficas</span>
+      <span class="sb-section-line"></span>
+    </div>
+
+    <div class="ly" data-id="localidades">
+      <div class="ly-icon-box" style="background:rgba(0,0,0,.3);border:1px solid rgba(16,185,129,.3);color:#10b981">
+        <span class="ly-icon">📍</span>
+      </div>
+      <div class="ly-info">
+        <div class="ly-title-row">
+          <span class="ly-name">Localidades</span>
+          <span class="ly-badge">PUNTOS</span>
+        </div>
+        <span class="ly-sub">Poblados y rancherías</span>
+      </div>
+      <div class="ly-right">
+        <span class="ly-loader"></span>
+        <input type="checkbox" class="ly-check" data-id="localidades">
+      </div>
+    </div>
+
+    <div class="ly" data-id="lugares">
+      <div class="ly-icon-box" style="background:rgba(0,0,0,.3);border:1px solid rgba(20,184,166,.3);color:#14b8a6">
+        <span class="ly-icon">📌</span>
+      </div>
+      <div class="ly-info">
+        <div class="ly-title-row">
+          <span class="ly-name">Lugares (Colonias/Ejidos)</span>
+          <span class="ly-badge">PUNTOS</span>
+        </div>
+        <span class="ly-sub">Puntos de referencia</span>
+      </div>
+      <div class="ly-right">
+        <span class="ly-loader"></span>
+        <input type="checkbox" class="ly-check" data-id="lugares">
+      </div>
+    </div>
+
+    <div class="ly" data-id="loc_poligono">
+      <div class="ly-icon-box" style="background:rgba(0,0,0,.3);border:1px solid rgba(99,102,241,.3);color:#6366f1">
+        <span class="ly-icon">🗺️</span>
+      </div>
+      <div class="ly-info">
+        <div class="ly-title-row">
+          <span class="ly-name">Polígonos Localidades</span>
+          <span class="ly-badge">POLÍGONO</span>
+        </div>
+        <span class="ly-sub">Perímetros habitados</span>
+      </div>
+      <div class="ly-right">
+        <span class="ly-loader"></span>
+        <input type="checkbox" class="ly-check" data-id="loc_poligono">
+      </div>
+    </div>
+
+    <div class="ly" data-id="r_agebs">
+      <div class="ly-icon-box" style="background:rgba(0,0,0,.3);border:1px solid rgba(225,29,72,.3);color:#e11d48">
+        <span class="ly-icon">📐</span>
+      </div>
+      <div class="ly-info">
+        <div class="ly-title-row">
+          <span class="ly-name">AGEBs de Cobertura</span>
+          <span class="ly-badge">ESTADÍSTICA</span>
+        </div>
+        <span class="ly-sub">Áreas geoestadísticas INEGI</span>
+      </div>
+      <div class="ly-right">
+        <span class="ly-loader"></span>
+        <input type="checkbox" class="ly-check" data-id="r_agebs">
+      </div>
+    </div>
+
+    <div class="ly" data-id="manzanas">
+      <div class="ly-icon-box" style="background:rgba(0,0,0,.3);border:1px solid rgba(234,179,8,.3);color:#eab308">
+        <span class="ly-icon">🏘️</span>
+      </div>
+      <div class="ly-info">
+        <div class="ly-title-row">
+          <span class="ly-name">Manzanas Urbanas</span>
+          <span class="ly-badge">DETALLE</span>
+        </div>
+        <span class="ly-sub">Traza urbana fina</span>
+      </div>
+      <div class="ly-right">
+        <span class="ly-loader"></span>
+        <input type="checkbox" class="ly-check" data-id="manzanas">
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGO INFERIOR CON ESQUINAS CURVEADAS -->
+  <div class="sb-footer">
+    <div class="sb-logo-card">
+      <img src="logo.png" alt="Logo Institucional" class="sb-logo-img" onerror="this.src='https://raw.githubusercontent.com/estudiotab1/mc/main/image%20(1).png'">
+    </div>
+    <div class="sb-footer-copy">Programa Mujeres al Centro © 2026</div>
+  </div>
+</aside>
+
+<!-- Toggle sidebar -->
+<div id="btn-sb-toggle"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"/></svg></div>
+
+<!-- MAIN -->
+<main id="main">
+  <div id="map"></div>
+  <div id="toast"><div class="spin-sm"></div><span id="toast-msg">Cargando…</span></div>
+
+  <!-- FABs de paneles (Capas y Atributos) -->
+  <div class="map-fabs">
+    <button class="map-fab on" id="fab-capas" title="Capas activas y clasificación">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2.8L2 7.8L12 12.8L22 7.8L12 2.8Z" fill="#ffffff" stroke="#ffffff" stroke-width="0.8" stroke-linejoin="round"/>
+        <path d="M2 12L12 17L22 12L19.8 10.9L12 14.8L4.2 10.9L2 12Z" fill="#ffffff" stroke="#ffffff" stroke-width="0.8" stroke-linejoin="round"/>
+        <path d="M2 16.5L12 21.5L22 16.5L19.8 15.4L12 19.3L4.2 15.4L2 16.5Z" fill="#ffffff" stroke="#ffffff" stroke-width="0.8" stroke-linejoin="round"/>
+      </svg>
+      <span class="map-fab-tip">Capas</span>
+    </button>
+    <button class="map-fab on" id="fab-attr" title="Inspector de atributos">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="3" width="8" height="8" rx="2" fill="#ffffff"/>
+        <rect x="13" y="3" width="8" height="8" rx="2" fill="#ffffff"/>
+        <rect x="3" y="13" width="8" height="8" rx="2" fill="#ffffff"/>
+        <rect x="13" y="13" width="8" height="8" rx="2" fill="#ffffff"/>
+      </svg>
+      <span class="map-fab-tip">Atributos</span>
+    </button>
+    <button class="map-fab" id="fab-buffer" title="Herramienta de Buffer (Área de influencia)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/>
+        <circle cx="12" cy="12" r="4.5"/>
+        <circle cx="12" cy="12" r="1.5" fill="#ffffff"/>
+      </svg>
+      <span class="map-fab-tip">Buffer</span>
+    </button>
+  </div>
+
+  <!-- PANEL CAPAS ACTIVAS -->
+  <div class="fp" id="p-capas">
+    <div class="fp-head">
+      <div class="fp-title">Capas activas <span class="fp-badge" id="badge-n">0</span></div>
+      <button class="fp-min" id="min-capas" title="Minimizar">−</button>
+    </div>
+    <div class="fp-body" id="body-capas">
+      <div id="chips-container"></div>
+
+      <div>
+        <div class="sel-label">Mapa base</div>
+        <select class="sel" id="sel-base">
+          <option value="google-streets" selected>Google Maps (Calles)</option>
+          <option value="dark">Mapa nocturno (Carto)</option>
+          <option value="light">Mapa claro (Carto)</option>
+          <option value="hybrid">Híbrido (Google)</option>
+          <option value="satellite">Satélite (Google)</option>
+        </select>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="act-btn act-pri" id="classify-btn" style="flex:1">
+          Clasificar capa 🎨
+        </button>
+        <button class="cls-btn-dl" id="btn-download" style="flex:1">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar GeoJSON
+        </button>
+      </div>
+
+      <div id="cls-active-status" style="display:none;background:rgba(228,0,124,0.08);border:1px solid rgba(228,0,124,0.25);border-radius:8px;padding:8px 10px;font-size:11px;margin-top:6px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;flex-direction:column;gap:2px;overflow:hidden">
+          <span style="font-size:9.5px;color:#ff66b2;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Capa clasificada</span>
+          <span id="cls-active-desc" style="color:var(--t1);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span>
+        </div>
+        <button class="cls-reset" id="cls-status-reset" title="Restaurar colores originales" style="width:24px;height:24px;flex-shrink:0;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;color:var(--t3);cursor:pointer">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL HERRAMIENTA BUFFER -->
+  <div class="fp" id="p-buffer">
+    <div class="fp-head">
+      <div class="fp-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/><circle cx="12" cy="12" r="4"/></svg>
+        Análisis Espacial (Buffer)
+      </div>
+      <button class="fp-min" id="min-buffer" title="Minimizar">−</button>
+    </div>
+    <div class="fp-body" style="gap:12px">
+      <div>
+        <div class="sel-label">Radio de Influencia</div>
+        <div class="buf-radios-grid">
+          <button class="buf-rad-btn" data-r="500">500 m</button>
+          <button class="buf-rad-btn active" data-r="1000">1 km</button>
+          <button class="buf-rad-btn" data-r="2000">2 km</button>
+          <button class="buf-rad-btn" data-r="3000">3 km</button>
+          <button class="buf-rad-btn" data-r="5000">5 km</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <input type="range" id="buf-slider" min="200" max="10000" step="100" value="1000" style="flex:1;accent-color:var(--blue);cursor:pointer">
+          <span id="buf-slider-val" style="font-size:11.5px;font-weight:800;color:var(--blue);min-width:48px;text-align:right">1,000 m</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="sel-label">Capas a Interceptar</div>
+        <select class="sel" id="buf-target-layer">
+          <option value="all">⚡ Todas las Capas Activas</option>
+          <option value="points">📍 Todas las Capas de Puntos</option>
+          <option value="polygons">🗺️ Todas las Capas de Polígonos</option>
+          <option value="sedes">🏫 Sedes de Formación (Puntos)</option>
+          <option value="colonias">🏙️ Colonias Urbanas (Polígonos)</option>
+          <option value="r_agebs">📐 AGEBs de Cobertura (Polígonos)</option>
+          <option value="manzanas">🏘️ Manzanas Urbanas (Polígonos)</option>
+          <option value="localidades">📍 Localidades (Puntos)</option>
+          <option value="loc_poligono">🗺️ Polígonos Localidades</option>
+        </select>
+      </div>
+
+      <div style="background:rgba(255,255,255,.03);padding:10px 12px;border-radius:8px;border:1px solid var(--border)">
+        <div class="sel-label" style="margin-bottom:6px">Modo de Análisis</div>
+        <div style="display:flex;gap:6px">
+          <button class="act-btn act-pri" id="btn-buf-click" style="flex:1;font-size:11px">🎯 Clic en Mapa</button>
+          <button class="act-btn act-sec" id="btn-buf-sedes" style="flex:1;font-size:11px">🏫 A todas las Sedes</button>
+        </div>
+      </div>
+
+      <!-- Resumen del Buffer con desglose de Puntos y Polígonos -->
+      <div id="buf-stats-box" style="display:none;background:rgba(21,29,46,.95);border:1px solid rgba(228,0,124,.35);border-radius:10px;padding:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:10px;font-weight:800;color:#ff66b2;text-transform:uppercase;letter-spacing:.6px">Resultados de Intersección</span>
+          <span id="buf-total-badge" class="fp-badge">0 elementos</span>
+        </div>
+        <div id="buf-stats-content" style="font-size:11.5px;color:var(--t1);line-height:1.45"></div>
+        <div id="buf-stats-breakdown" style="margin-top:8px;display:flex;flex-direction:column;gap:5px;max-height:160px;overflow-y:auto;padding-right:4px"></div>
+        <button id="btn-buf-exp-csv" class="act-btn act-sec" style="width:100%;font-size:10.5px;margin-top:10px;padding:6px">📥 Descargar Elementos (CSV)</button>
+      </div>
+
+      <div style="display:flex;gap:6px;margin-top:2px">
+        <button class="act-btn act-sec" id="btn-buf-clear" style="flex:1;font-size:11px">🗑️ Limpiar Buffers</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL LEYENDA FLOTANTE -->
+  <div class="fp" id="p-legend" style="bottom:24px;left:20px;width:260px;max-height:420px;display:none;z-index:850">
+    <div class="fp-head">
+      <div class="fp-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="18" x2="20" y2="18"/></svg>
+        <span id="legend-title">Leyenda</span>
+      </div>
+      <button class="fp-min" id="legend-close" title="Cerrar leyenda">✕</button>
+    </div>
+    <div class="fp-body" style="padding:10px 14px;gap:6px;max-height:340px">
+      <div id="legend-field" style="font-size:10.5px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px"></div>
+      <div id="legend-items" style="display:flex;flex-direction:column;gap:3px;overflow-y:auto;max-height:280px"></div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL DE CLASIFICACIÓN (IDÉNTICO A GEOVISOR) ═══ -->
+  <div id="classify-modal" class="classify-modal hidden" role="dialog" aria-modal="true">
+    <div class="classify-card">
+      <div class="classify-header">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.5"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C21.996 6.5 17.5 2 12 2z"/></svg>
+          <span>Clasificar capa</span>
+        </div>
+        <button id="classify-close" class="classify-close" title="Cerrar">✕</button>
+      </div>
+
+      <div class="classify-body">
+        <div class="classify-row">
+          <label class="cl-label">Capa activa</label>
+          <select id="cl-layer" class="cl-select"><option value="">— Seleccionar —</option></select>
+        </div>
+
+        <div class="classify-row">
+          <label class="cl-label">Campo a clasificar</label>
+          <select id="cl-field" class="cl-select"><option value="">— Seleccionar campo —</option></select>
+        </div>
+
+        <div class="classify-row">
+          <label class="cl-label">Método</label>
+          <div class="cl-radio-group">
+            <label class="cl-radio">
+              <input type="radio" name="cl-method" value="unique" checked>
+              <span>Valores únicos</span>
+            </label>
+            <label class="cl-radio">
+              <input type="radio" name="cl-method" value="graduated">
+              <span>Gradual (coropleta)</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="classify-row">
+          <label class="cl-label">Rampa de color</label>
+          <div id="cl-ramp-picker" class="cl-ramp-picker"></div>
+        </div>
+
+        <div id="cl-graduated-opts" class="classify-row hidden">
+          <label class="cl-label">Número de clases</label>
+          <div class="cl-classes-btns" id="cl-classes">
+            <button class="cl-class-btn" data-n="2">2</button>
+            <button class="cl-class-btn" data-n="3">3</button>
+            <button class="cl-class-btn" data-n="4">4</button>
+            <button class="cl-class-btn active" data-n="5">5</button>
+            <button class="cl-class-btn" data-n="7">7</button>
+            <button class="cl-class-btn" data-n="9">9</button>
+          </div>
+          <label class="cl-label" style="margin-top:8px;">Intervalo</label>
+          <div class="cl-radio-group">
+            <label class="cl-radio">
+              <input type="radio" name="cl-interval" value="quantile" checked>
+              <span>Cuantil</span>
+            </label>
+            <label class="cl-radio">
+              <input type="radio" name="cl-interval" value="equal">
+              <span>Intervalo igual</span>
+            </label>
+            <label class="cl-radio">
+              <input type="radio" name="cl-interval" value="jenks">
+              <span>Jenks</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="cl-legend" class="cl-legend"></div>
+      </div>
+
+      <div class="classify-footer">
+        <button id="cl-reset-btn" class="cl-btn-ghost">↺ Restaurar</button>
+        <button id="cl-apply-btn" class="cl-btn-apply">✓ Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL ATRIBUTOS -->
+  <div class="fp" id="p-attr">
+    <div class="fp-head">
+      <div class="fp-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        <span>Tabla de Atributos</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <button class="fp-min" id="max-attr" title="Expandir/Reducir ancho">⤢</button>
+        <button class="fp-min" id="min-attr" title="Minimizar">−</button>
+      </div>
+    </div>
+    <div class="fp-body" id="body-attr" style="padding:10px 12px;gap:8px">
+      <!-- Tabs de vista -->
+      <div class="attr-tabs">
+        <button class="attr-tab active" id="tab-attr-item">📋 Elemento</button>
+        <button class="attr-tab" id="tab-attr-layer">📑 Tabla de Capa</button>
+      </div>
+
+      <!-- Vista 1: Elemento seleccionado -->
+      <div id="view-attr-item">
+        <div class="ac-empty" id="attr-empty">Haz clic en cualquier elemento del mapa para inspeccionar sus atributos.</div>
+        <div id="attr-content" style="display:none"></div>
+      </div>
+
+      <!-- Vista 2: Tabla completa de la capa -->
+      <div id="view-attr-layer" style="display:none">
+        <div class="attr-tools">
+          <select class="sel" id="sel-attr-layer" style="flex:1;padding:5px 8px;font-size:10.5px">
+            <!-- Capas activas -->
+          </select>
+          <input type="text" id="input-search-layer-tbl" class="attr-search" placeholder="Buscar en tabla..." style="width:130px">
+          <button id="btn-export-layer-tbl" class="cls-btn-dl" style="padding:5px 9px;font-size:10px" title="Exportar esta tabla a CSV">
+            CSV
+          </button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:9.5px;color:var(--t3);margin-bottom:4px">
+          <span id="lbl-layer-count">0 registros</span>
+          <span style="font-style:italic">Clic en fila para centrar</span>
+        </div>
+        <div class="tbl-scroll-wrap" id="wrap-layer-tbl">
+          <div class="ac-empty">Selecciona una capa activa arriba para visualizar sus registros.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dash">
+    <div class="dash-head">
+      <div>
+        <div class="dash-title">Tablero Integral de Impacto y Analítica</div>
+        <div class="dash-sub">Programa Mujeres al Centro · Municipio de Centro, Tabasco (2022–2026)</div>
+      </div>
+      <div class="dash-filters">
+        <select class="dash-sel" id="dash-fil-anio" title="Filtrar por año de operación">
+          <option value="todos">Todos los Años (2022–2026)</option>
+          <option value="2022">Año 2022</option>
+          <option value="2023">Año 2023</option>
+          <option value="2024">Año 2024</option>
+          <option value="2025">Año 2025</option>
+          <option value="2026">Año 2026</option>
+        </select>
+        <select class="dash-sel" id="dash-fil-zona" title="Filtrar por ámbito geográfico">
+          <option value="todos">Todos los Ámbitos</option>
+          <option value="urbano">Urbano (Villahermosa)</option>
+          <option value="rural">Rural (Localidades y Ejidos)</option>
+        </select>
+        <button class="dash-btn-exp" id="dash-btn-export" title="Exportar resumen analítico a CSV">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar Datos
+        </button>
+        <button class="act-btn act-pri" id="btn-back">← Volver al Mapa</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpi-grid"></div>
+
+    <!-- GRÁFICAS -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h4>Evolución de Beneficiarias y Sedes <span>Histórico 2022–2026</span></h4>
+        <div class="chart-canvas-wrap"><canvas id="ch1"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <h4>Distribución por Grado de Marginación <span>CONAPO</span></h4>
+        <div class="chart-canvas-wrap"><canvas id="ch2"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <h4>Grupos Etarios de Participantes <span>Distribución de edades</span></h4>
+        <div class="chart-canvas-wrap"><canvas id="ch-edad"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <h4>Áreas de Capacitación y Oficios <span>Talleres formativos</span></h4>
+        <div class="chart-canvas-wrap"><canvas id="ch-oficios"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <h4>Top Sedes con Mayor Afluencia <span>Participantes registradas</span></h4>
+        <div class="chart-canvas-wrap"><canvas id="ch-sedes"></canvas></div>
+      </div>
+
+      <div class="chart-card">
+        <h4>Radar de Autonomía y Empoderamiento <span>Evaluación Antes vs Ahora</span></h4>
+        <div class="chart-canvas-wrap"><canvas id="ch-radar"></canvas></div>
+      </div>
+    </div>
+
+    <!-- HEATMAP INTERACTIVO DE CORRELACIÓN Y IMPACTO -->
+    <div class="heatmap-card">
+      <div class="heatmap-wrap">
+        <h4 style="font-size:14px;font-weight:800;color:#fff;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+          🔥 Heatmap de Correlaciones y Factores de Impacto
+        </h4>
+        <p style="font-size:11.5px;color:var(--t3);margin-bottom:14px">
+          Matriz de calor de Pearson (r): explora la intensidad y dirección de las relaciones entre autonomía, capacidades productivas y liderazgo en el hogar.
+        </p>
+        <div id="hm-container"></div>
+      </div>
+
+      <div class="hm-detail" id="hm-detail-box">
+        <div class="hm-detail-tag" id="hm-tag">Selección del Heatmap</div>
+        <div class="hm-detail-val" id="hm-val">r = +0.52</div>
+        <div class="hm-detail-title" id="hm-title">Autonomía $ ↔ Decisión en el Hogar</div>
+        <div class="hm-detail-desc" id="hm-desc">
+          Pasa el cursor sobre cualquier celda del mapa de calor para inspeccionar el nivel de correlación y la interpretación analítica.
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+(function(){
+const GH='https://raw.githubusercontent.com/estudiotab1/MC/main/';
+
+const CFG={
+  colonias:{file:'r_colonias.geojson',label:'Colonias Urbanas',color:'#e8457e'},
+  sedes:{file:'r_sedes.geojson',label:'Sedes de Formación',color:'#2d7ff9'},
+  nucleos:{file:'r_nucleos.geojson',label:'Núcleos y Ejidos',color:'#f59e0b'},
+  vinculos:{file:'r_vinculos.geojson',label:'Flujos de Movilidad',color:'#8b5cf6'},
+  municipios:{file:'municipios.geojson',label:'Municipios Tabasco',color:'#06b6d4'},
+  localidades:{file:'r_localidades.geojson',label:'Localidades',color:'#10b981'},
+  lugares:{file:'r_lugares.geojson',label:'Lugares',color:'#14b8a6'},
+  loc_poligono:{file:'loc_poligono.geojson',label:'Polígonos Localidades',color:'#6366f1'},
+  r_agebs:{file:'r_agebs.geojson',label:'AGEBs de Cobertura',color:'#e11d48'},
+  manzanas:{file:'manzanas_vh.geojson',label:'Manzanas Urbanas',color:'#eab308'},
+};
+
+const raw={},lyr={};
+let clsVar='tasa';
+
+/* ── MAPA ── */
+const map=L.map('map',{center:[17.989,-92.93],zoom:12,zoomControl:false,attributionControl:false});
+L.control.zoom({position:'bottomright'}).addTo(map);
+
+const BASEMAPS={
+  'google-streets':{url:'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',opt:{subdomains:['0','1','2','3'],maxZoom:20}},
+  'dark':{url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',opt:{maxZoom:20,maxNativeZoom:16}},
+  'light':{url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',opt:{maxZoom:20,maxNativeZoom:16}},
+  'hybrid':{url:'https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',opt:{subdomains:['0','1','2','3'],maxZoom:20}},
+  'satellite':{url:'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',opt:{subdomains:['0','1','2','3'],maxZoom:20}}
+};
+
+let activeBasemap=null;
+
+function setBasemap(key){
+  if(activeBasemap){
+    map.removeLayer(activeBasemap);
+    activeBasemap=null;
+  }
+  const cfg=BASEMAPS[key];
+  if(cfg){
+    activeBasemap=L.tileLayer(cfg.url,cfg.opt);
+    activeBasemap.addTo(map);
+  }
+}
+
+// Inicializar con Google Maps (Calles)
+setBasemap('google-streets');
+
+document.getElementById('sel-base').onchange=function(e){
+  setBasemap(e.target.value);
+};
+
+/* ── HELPERS ── */
+function lc(l){try{if(l.getLatLng)return l.getLatLng()}catch(e){}try{if(l.getBounds)return l.getBounds().getCenter()}catch(e){}try{const s=l.getLayers();if(s.length&&s[0].getLatLng)return s[0].getLatLng()}catch(e){}return map.getCenter()}
+
+function toast(msg){const t=document.getElementById('toast');document.getElementById('toast-msg').innerText=msg;t.style.display='flex'}
+function noToast(){document.getElementById('toast').style.display='none'}
+
+/* ══════════════════════════════════════════════════════════════
+   SISTEMA DE CLASIFICACIÓN (IDÉNTICO A GEOVISOR TABASCO)
+   ══════════════════════════════════════════════════════════════ */
+const RAMPS = {
+  'Semaforo': ['#1A9850','#66BD63','#D9EF8B','#FEE08B','#F46D43','#D73027'],
+  'YlOrRd':  ['#FFFFB2','#FED976','#FEB24C','#FD8D3C','#FC4E2A','#E31A1C','#B10026'],
+  'Blues':   ['#EFF3FF','#C6DBEF','#9ECAE1','#6BAED6','#3182BD','#08519C','#08306B'],
+  'Greens':  ['#F7FCF5','#C7E9C0','#74C476','#41AB5D','#238B45','#006D2C','#00441B'],
+  'Reds':    ['#FFF5F0','#FCBBA1','#FC8D59','#EF6548','#D7301F','#990000','#67000D'],
+  'Purples': ['#F2F0F7','#DADAEB','#BCBDDC','#9E9AC8','#807DBA','#6A51A3','#3F007D'],
+  'RdYlGn':  ['#D73027','#F46D43','#FEE08B','#D9EF8B','#66BD63','#1A9850','#006837'],
+  'Viridis': ['#440154','#414487','#2A788E','#22A884','#7AD151','#FDE725'],
+  'Plasma':  ['#0D0887','#6A00A8','#B12A90','#E16462','#FCA636','#F0F921']
+};
+
+let selectedRamp = 'YlOrRd';
+let selectedClasses = 5;
+const origColors = {};
+let currentClassification = { layerId: null, field: null, method: null };
+
+function buildRampPicker() {
+  const picker = document.getElementById('cl-ramp-picker');
+  if (!picker) return;
+  picker.innerHTML = '';
+  Object.entries(RAMPS).forEach(([name, colors]) => {
+    const swatch = document.createElement('div');
+    swatch.className = 'cl-ramp-swatch' + (name === selectedRamp ? ' active' : '');
+    swatch.title = name;
+    swatch.dataset.ramp = name;
+    const bar = colors.map(c => `<span style="background:${c};flex:1;height:100%;display:inline-block;"></span>`).join('');
+    swatch.innerHTML = `<div class="cl-ramp-bar">${bar}</div><span class="cl-ramp-name">${name}</span>`;
+    swatch.addEventListener('click', () => {
+      selectedRamp = name;
+      document.querySelectorAll('.cl-ramp-swatch').forEach(s => s.classList.remove('active'));
+      swatch.classList.add('active');
+      refreshLegendPreview();
+    });
+    picker.appendChild(swatch);
+  });
+}
+
+function populateFieldSelector() {
+  const layerId = document.getElementById('cl-layer').value;
+  const fieldSel = document.getElementById('cl-field');
+  fieldSel.innerHTML = '<option value="">— Seleccionar campo —</option>';
+  document.getElementById('cl-legend').innerHTML = '';
+  if (!layerId) return;
+  const data = raw[layerId];
+  if (!data?.features?.length) return;
+
+  const cols = [];
+  const ignored = ['fid', 'x_m', 'y_m', 'lat', 'lon', 'cvegeo', 'cve_loc', 'cve_mun'];
+  data.features.forEach(f => {
+    Object.keys(f.properties || {}).forEach(k => {
+      if (!cols.includes(k) && !ignored.includes(k)) cols.push(k);
+    });
+  });
+
+  cols.forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = k;
+    fieldSel.appendChild(opt);
+  });
+
+  if (cols.length > 0) {
+    fieldSel.value = cols[0];
+    refreshLegendPreview();
+  }
+}
+
+function refreshLegendPreview() {
+  const layerId = document.getElementById('cl-layer').value;
+  const field = document.getElementById('cl-field').value;
+  const methodRadio = document.querySelector('input[name="cl-method"]:checked');
+  const method = methodRadio ? methodRadio.value : 'unique';
+  const legend = document.getElementById('cl-legend');
+  legend.innerHTML = '';
+  if (!layerId || !field) return;
+  const data = raw[layerId];
+  if (!data?.features?.length) return;
+
+  if (method === 'unique') {
+    const uniques = getUniqueValues(data.features, field);
+    const ramp = RAMPS[selectedRamp];
+    legend.innerHTML = uniques.slice(0, 12).map((v, i) => {
+      const col = rampColor(ramp, i / Math.max(uniques.length - 1, 1));
+      return `<div class="cl-legend-item">
+        <span class="cl-legend-dot" style="background:${col};border-radius:50%"></span>
+        <span class="cl-legend-label" title="${v}">${v}</span>
+      </div>`;
+    }).join('') + (uniques.length > 12 ? `<p class="cl-legend-more">+${uniques.length - 12} valores más</p>` : '');
+  } else {
+    const values = data.features
+      .map(f => parseFloat(f.properties?.[field]))
+      .filter(v => !isNaN(v));
+    if (!values.length) {
+      legend.innerHTML = `<p class="cl-legend-more">El campo no tiene valores numéricos.</p>`;
+      return;
+    }
+    const intervalRadio = document.querySelector('input[name="cl-interval"]:checked');
+    const interval = intervalRadio ? intervalRadio.value : 'quantile';
+    let breaks;
+    if (interval === 'jenks') {
+      breaks = getJenksBreaks(values, selectedClasses);
+    } else if (interval === 'quantile') {
+      breaks = getQuantileBreaks(values, selectedClasses);
+    } else {
+      breaks = getEqualBreaks(values, selectedClasses);
+    }
+    const ramp = RAMPS[selectedRamp];
+    legend.innerHTML = breaks.map((b, i) => {
+      const col = rampColor(ramp, i / (breaks.length - 1 || 1));
+      return `<div class="cl-legend-item">
+        <span class="cl-legend-dot" style="background:${col};border-radius:3px"></span>
+        <span class="cl-legend-label">${b.from.toFixed(1)} – ${b.to.toFixed(1)}</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+function getUniqueValues(features, field) {
+  const set = new Set();
+  features.forEach(f => {
+    if (f.properties?.[field] != null) set.add(String(f.properties[field]));
+  });
+  return [...set].sort();
+}
+
+function getQuantileBreaks(values, n) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const breaks = [];
+  for (let i = 0; i < n; i++) {
+    const from = sorted[Math.floor((i / n) * sorted.length)];
+    const to = sorted[Math.floor(((i + 1) / n) * sorted.length) - 1] ?? sorted[sorted.length - 1];
+    breaks.push({ from, to });
+  }
+  return breaks;
+}
+
+function getEqualBreaks(values, n) {
+  const min = Math.min(...values), max = Math.max(...values);
+  const step = (max - min) / n;
+  return Array.from({ length: n }, (_, i) => ({
+    from: min + i * step,
+    to: min + (i + 1) * step
+  }));
+}
+
+function getJenksBreaks(values, n) {
+  if (typeof ss === 'undefined' || !ss.jenks) return getQuantileBreaks(values, n);
+  const uniqueVals = [...new Set(values)];
+  const classes = Math.min(n, uniqueVals.length);
+  if (classes <= 1) {
+    const min = Math.min(...values), max = Math.max(...values);
+    return [{ from: min, to: max }];
+  }
+  try {
+    const breaksRaw = ss.jenks(values, classes);
+    const breaks = [];
+    for (let i = 0; i < breaksRaw.length - 1; i++) {
+      breaks.push({ from: breaksRaw[i], to: breaksRaw[i + 1] });
+    }
+    return breaks;
+  } catch (e) {
+    console.error("Error calculando Jenks:", e);
+    return getQuantileBreaks(values, n);
+  }
+}
+
+function rampColor(ramp, t) {
+  const clamped = Math.max(0, Math.min(1, t));
+  const pos = clamped * (ramp.length - 1);
+  const lo = Math.floor(pos), hi = Math.ceil(pos);
+  const frac = pos - lo;
+  return lerpHex(ramp[lo], ramp[hi], frac);
+}
+
+function lerpHex(a, b, t) {
+  const ar = parseInt(a.slice(1, 3), 16), ag = parseInt(a.slice(3, 5), 16), ab = parseInt(a.slice(5, 7), 16);
+  const br = parseInt(b.slice(1, 3), 16), bg = parseInt(b.slice(3, 5), 16), bb = parseInt(b.slice(5, 7), 16);
+  const r = Math.round(ar + (br - ar) * t).toString(16).padStart(2, '0');
+  const g = Math.round(ag + (bg - ag) * t).toString(16).padStart(2, '0');
+  const bv = Math.round(ab + (bb - ab) * t).toString(16).padStart(2, '0');
+  return `#${r}${g}${bv}`;
+}
+
+function applyClassificationModal() {
+  const layerId = document.getElementById('cl-layer').value;
+  const field = document.getElementById('cl-field').value;
+  const methodRadio = document.querySelector('input[name="cl-method"]:checked');
+  const method = methodRadio ? methodRadio.value : 'unique';
+
+  if (!layerId || !field) {
+    alert('Por favor selecciona una capa activa y un campo.');
+    return;
+  }
+
+  const data = raw[layerId];
+  const stateLyr = lyr[layerId];
+  if (!data?.features?.length || !stateLyr) return;
+
+  const cfg = CFG[layerId] || { label: layerId, color: '#e4007c' };
+  if (!origColors[layerId]) origColors[layerId] = cfg.color;
+
+  const ramp = RAMPS[selectedRamp];
+  let legendEntries = [];
+
+  if (method === 'unique') {
+    const uniques = getUniqueValues(data.features, field);
+    const colorMap = {};
+    uniques.forEach((v, i) => {
+      colorMap[v] = rampColor(ramp, i / Math.max(uniques.length - 1, 1));
+    });
+
+    stateLyr.eachLayer(l => {
+      const val = l.feature?.properties?.[field] != null ? String(l.feature.properties[field]) : null;
+      const col = (val && colorMap[val]) ? colorMap[val] : '#64748b';
+      l._classifiedColor = col;
+      if (l.setStyle) {
+        l.setStyle({ color: 'rgba(0,0,0,0.5)', fillColor: col, fillOpacity: 0.85, weight: 1 });
+      } else if (l.setIcon) {
+        l.setIcon(L.divIcon({
+          className: '',
+          html: `<div style="width:24px;height:24px;border-radius:50%;background:${col};border:2px solid rgba(0,0,0,0.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;box-shadow:0 2px 8px rgba(0,0,0,0.45)">★</div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        }));
+      }
+    });
+
+    legendEntries = uniques.slice(0, 15).map(v => ({
+      color: colorMap[v],
+      label: v,
+      shape: 'circle'
+    }));
+  } else {
+    const values = data.features.map(f => parseFloat(f.properties?.[field])).filter(v => !isNaN(v));
+    if (!values.length) {
+      alert('El campo seleccionado no tiene valores numéricos.');
+      return;
+    }
+    const intervalRadio = document.querySelector('input[name="cl-interval"]:checked');
+    const interval = intervalRadio ? intervalRadio.value : 'quantile';
+    let breaks;
+    if (interval === 'jenks') breaks = getJenksBreaks(values, selectedClasses);
+    else if (interval === 'quantile') breaks = getQuantileBreaks(values, selectedClasses);
+    else breaks = getEqualBreaks(values, selectedClasses);
+
+    stateLyr.eachLayer(l => {
+      const val = parseFloat(l.feature?.properties?.[field]);
+      let col = '#64748b';
+      if (!isNaN(val) && breaks.length) {
+        const idx = breaks.findIndex(b => val >= b.from && val <= b.to);
+        const t = idx < 0 ? (val < breaks[0].from ? 0 : 1) : idx / (breaks.length - 1 || 1);
+        col = rampColor(ramp, t);
+      }
+      l._classifiedColor = col;
+      if (l.setStyle) {
+        l.setStyle({ color: 'rgba(0,0,0,0.5)', fillColor: col, fillOpacity: 0.85, weight: 1 });
+      } else if (l.setIcon) {
+        l.setIcon(L.divIcon({
+          className: '',
+          html: `<div style="width:24px;height:24px;border-radius:50%;background:${col};border:2px solid rgba(0,0,0,0.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;box-shadow:0 2px 8px rgba(0,0,0,0.45)">★</div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        }));
+      }
+    });
+
+    legendEntries = breaks.map((b, i) => ({
+      color: rampColor(ramp, i / (breaks.length - 1 || 1)),
+      label: `${b.from.toFixed(1)} – ${b.to.toFixed(1)}`,
+      shape: 'square'
+    }));
+  }
+
+  currentClassification = { layerId, field, method };
+
+  // Actualizar indicador de capa clasificada
+  const activeStatus = document.getElementById('cls-active-status');
+  const activeDesc = document.getElementById('cls-active-desc');
+  if (activeStatus && activeDesc) {
+    activeStatus.style.display = 'flex';
+    activeDesc.textContent = `${cfg.label || layerId} (${field})`;
+  }
+
+  // Mostrar leyenda en mapa
+  showMapLegend(cfg.label || layerId, field, legendEntries);
+
+  // Cerrar modal
+  document.getElementById('classify-modal').classList.add('hidden');
+}
+
+function resetClassification(targetLayerId) {
+  const layerId = targetLayerId || document.getElementById('cl-layer').value || currentClassification.layerId;
+  if (!layerId) return;
+
+  if (raw[layerId]) {
+    render(layerId, raw[layerId]);
+  }
+  delete origColors[layerId];
+  currentClassification = { layerId: null, field: null, method: null };
+
+  const activeStatus = document.getElementById('cls-active-status');
+  if (activeStatus) activeStatus.style.display = 'none';
+
+  hideMapLegend();
+  const modal = document.getElementById('classify-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function showMapLegend(layerName, fieldName, entries) {
+  document.getElementById('legend-title').textContent = layerName;
+  document.getElementById('legend-field').textContent = fieldName;
+  document.getElementById('legend-items').innerHTML = entries.map(e =>
+    `<div class="leg-entry" style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:11px">
+      <span class="leg-swatch" style="background:${e.color};border-radius:${e.shape === 'circle' ? '50%' : '3px'};width:12px;height:12px;flex-shrink:0;border:1px solid rgba(0,0,0,0.3);box-shadow:0 1px 3px rgba(0,0,0,0.25)"></span>
+      <span class="leg-label" title="${e.label}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t1);font-weight:500">${e.label}</span>
+    </div>`
+  ).join('');
+  document.getElementById('p-legend').style.display = 'block';
+}
+
+function hideMapLegend() {
+  document.getElementById('p-legend').style.display = 'none';
+}
+
+/* ── POPUPS MEJORADOS ── */
+function popColonia(p){
+  const gmc=PAL.gm[p.gm_dom]||'#475569';
+  return `<div class="pop">
+    <div class="pop-head" style="background:linear-gradient(135deg,#e8457e22,#f472b611)"><span class="pop-dot" style="background:#e8457e"></span><span class="pop-type" style="color:#e8457e">Colonia Urbana</span></div>
+    <div class="pop-title">${p.nombre||p.zona}</div>
+    <div class="pop-sub">Zona ${p.zona||'Villahermosa'}</div>
+    <div class="pop-grid">
+      <div class="pop-cell"><div class="pop-cell-label">Beneficiarias</div><div class="pop-cell-val" style="color:#e8457e">${p.benef||0}</div></div>
+      <div class="pop-cell"><div class="pop-cell-label">Tasa %</div><div class="pop-cell-val" style="color:#8b5cf6">${p.tasa?Number(p.tasa).toFixed(1):0}%</div></div>
+      <div class="pop-cell"><div class="pop-cell-label">Mujeres 18+</div><div class="pop-cell-val" style="color:#60a5fa;font-size:13px">${p.f18e?Number(p.f18e).toLocaleString():'—'}</div></div>
+      <div class="pop-cell"><div class="pop-cell-label">Marginación</div><div class="pop-cell-val" style="color:${gmc};font-size:12px">${p.gm_dom||'N/D'}</div></div>
+    </div></div>`;
+}
+
+function popSede(p){
+  return `<div class="pop">
+    <div class="pop-head" style="background:linear-gradient(135deg,#2d7ff922,#18bfff11)"><span class="pop-dot" style="background:#2d7ff9"></span><span class="pop-type" style="color:#2d7ff9">Sede de Formación</span></div>
+    <div class="pop-title">${p.sede}</div>
+    <div class="pop-sub">${p.lugar||''} · ${p.ambito||''} · Sector ${p.sector||''}</div>
+    <div class="pop-grid">
+      <div class="pop-cell"><div class="pop-cell-label">Frecuencia</div><div class="pop-cell-val" style="color:#2d7ff9">${p.veces||1}×</div></div>
+      <div class="pop-cell"><div class="pop-cell-label">Dist. Villahermosa</div><div class="pop-cell-val" style="color:#f59e0b;font-size:13px">${p.dist_vhsa?Number(p.dist_vhsa).toFixed(1)+' km':'0 km'}</div></div>
+    </div></div>`;
+}
+
+function popNucleo(p){
+  return `<div class="pop">
+    <div class="pop-head" style="background:linear-gradient(135deg,#f59e0b22,#fbbf2411)"><span class="pop-dot" style="background:#f59e0b"></span><span class="pop-type" style="color:#f59e0b">Núcleo / Comunidad</span></div>
+    <div class="pop-title">${p.nucleo}</div>
+    <div class="pop-sub">Sector ${p.sector||'Rural'}</div>
+    <div class="pop-grid">
+      <div class="pop-cell"><div class="pop-cell-label">Beneficiarias</div><div class="pop-cell-val" style="color:#f59e0b">${p.benef||0}</div></div>
+      <div class="pop-cell"><div class="pop-cell-label">Dist. Sede</div><div class="pop-cell-val" style="color:#60a5fa;font-size:13px">${p.d_sede_km?Number(p.d_sede_km).toFixed(1)+' km':'—'}</div></div>
+      <div class="pop-cell"><div class="pop-cell-label">Fue Sede</div><div class="pop-cell-val" style="color:${p.fue_sede?'#10b981':'#ef4444'};font-size:12px">${p.fue_sede?'Sí':'No'}</div></div>
+      <div class="pop-cell"><div class="pop-cell-label">Cobertura</div><div class="pop-cell-val" style="color:${p.sin_benef?'#ef4444':'#10b981'};font-size:12px">${p.sin_benef?'Sin cobertura':'Activa'}</div></div>
+    </div></div>`;
+}
+
+function popVinculo(p){
+  return `<div class="pop">
+    <div class="pop-head" style="background:linear-gradient(135deg,#8b5cf622,#a78bfa11)"><span class="pop-dot" style="background:#8b5cf6"></span><span class="pop-type" style="color:#8b5cf6">Flujo de Movilidad</span></div>
+    <div class="pop-title" style="font-size:13px">${p.lugar} → ${p.lugar_sede}</div>
+    <div class="pop-grid" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="pop-cell"><div class="pop-cell-label">Beneficiarias</div><div class="pop-cell-val" style="color:#e8457e">${p.benef||0}</div></div>
+      <div class="pop-cell"><div class="pop-cell-label">Distancia</div><div class="pop-cell-val" style="color:#60a5fa;font-size:13px">${p.dist_km?Number(p.dist_km).toFixed(1)+' km':'—'}</div></div>
+      <div class="pop-cell"><div class="pop-cell-label">Año</div><div class="pop-cell-val" style="color:#f59e0b">${p.anio||''}</div></div>
+    </div></div>`;
+}
+
+/* ── ATRIBUTOS (panel inferior derecho con Tablita de Datos) ── */
+let currentAttrLayerId = 'colonias';
+let currentAttrItem = null;
+
+function switchAttrTab(tab) {
+  const btnItem = document.getElementById('tab-attr-item');
+  const btnLayer = document.getElementById('tab-attr-layer');
+  const viewItem = document.getElementById('view-attr-item');
+  const viewLayer = document.getElementById('view-attr-layer');
+  if (!btnItem || !btnLayer || !viewItem || !viewLayer) return;
+
+  if (tab === 'item') {
+    btnItem.classList.add('active');
+    btnLayer.classList.remove('active');
+    viewItem.style.display = 'block';
+    viewLayer.style.display = 'none';
+  } else {
+    btnLayer.classList.add('active');
+    btnItem.classList.remove('active');
+    viewItem.style.display = 'none';
+    viewLayer.style.display = 'block';
+    syncAttrLayerSelect();
+    const sel = document.getElementById('sel-attr-layer');
+    if (sel && sel.value) renderLayerTable(sel.value);
+  }
+}
+
+function syncAttrLayerSelect(selectedId) {
+  const sel = document.getElementById('sel-attr-layer');
+  if (!sel) return;
+  const loadedIds = Object.keys(raw).filter(id => raw[id]?.features?.length);
+  if (!loadedIds.length) {
+    sel.innerHTML = '<option value="">(Sin capas activas)</option>';
+    return;
+  }
+  const currentVal = selectedId || sel.value || currentAttrLayerId || loadedIds[0];
+  sel.innerHTML = loadedIds.map(id => {
+    const label = CFG[id]?.label || id;
+    const isSel = id === currentVal ? 'selected' : '';
+    return `<option value="${id}" ${isSel}>${label}</option>`;
+  }).join('');
+
+  if (loadedIds.includes(currentVal)) {
+    currentAttrLayerId = currentVal;
+  }
+}
+
+function showAttr(type, p) {
+  currentAttrLayerId = type;
+  currentAttrItem = { type, p };
+  document.getElementById('attr-empty').style.display = 'none';
+  const c = document.getElementById('attr-content');
+  c.style.display = 'block';
+
+  switchAttrTab('item');
+
+  const cfg = CFG[type] || { label: type, color: '#e4007c' };
+  const titleName = p.nombre || p.sede || p.nom_mun || p.nom_col || p.zona || p.lugar || p.nucleo || cfg.label;
+  const entries = Object.entries(p).filter(([k]) => k !== 'fid' && !k.startsWith('_'));
+
+  let tableHtml = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.08)">
+      <div style="display:flex;align-items:center;gap:6px;overflow:hidden">
+        <span style="width:10px;height:10px;border-radius:50%;background:${cfg.color};box-shadow:0 0 6px ${cfg.color};flex-shrink:0"></span>
+        <span style="font-weight:800;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${titleName}</span>
+      </div>
+      <span class="tbl-badge tbl-badge-pink" style="flex-shrink:0">${cfg.label}</span>
+    </div>
+    <div style="margin-bottom:6px">
+      <input type="text" id="attr-item-filter" class="attr-search" style="width:100%" placeholder="Filtrar atributos...">
+    </div>
+    <div class="tbl-scroll-wrap" style="max-height:280px">
+      <table class="tbl-attr" id="tbl-attr-item-table">
+        <thead>
+          <tr>
+            <th>Campo / Atributo</th>
+            <th>Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  entries.forEach(([k, v]) => {
+    let formattedVal = v;
+    if (v === null || v === undefined || v === '') {
+      formattedVal = '<span style="color:var(--t4)">—</span>';
+    } else if (typeof v === 'number') {
+      formattedVal = `<span class="tbl-badge tbl-badge-num">${Number.isInteger(v) ? v.toLocaleString() : v.toFixed(2)}</span>`;
+    } else if (typeof v === 'boolean') {
+      formattedVal = v ? '<span style="color:#10b981;font-weight:700">Sí</span>' : '<span style="color:#ef4444;font-weight:700">No</span>';
+    } else if (typeof v === 'string' && v.startsWith('#') && (v.length === 4 || v.length === 7)) {
+      formattedVal = `<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:${v};display:inline-block"></span>${v}</span>`;
+    }
+    tableHtml += `
+      <tr>
+        <td class="k-col">${k}</td>
+        <td class="v-col">${formattedVal}</td>
+      </tr>
+    `;
+  });
+
+  tableHtml += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  c.innerHTML = tableHtml;
+
+  const itemFilter = document.getElementById('attr-item-filter');
+  if (itemFilter) {
+    itemFilter.oninput = function() {
+      const q = this.value.toLowerCase().trim();
+      document.querySelectorAll('#tbl-attr-item-table tbody tr').forEach(tr => {
+        tr.style.display = (tr.innerText || '').toLowerCase().includes(q) ? '' : 'none';
+      });
+    };
+  }
+
+  syncAttrLayerSelect(type);
+
+  const pAttr = document.getElementById('p-attr');
+  if (pAttr && (pAttr.dataset.state === 'collapsed' || window.getComputedStyle(pAttr).display === 'none')) {
+    expandPanelFromFab('p-attr', 'fab-attr');
+  }
+}
+
+function renderLayerTable(layerId) {
+  const wrap = document.getElementById('wrap-layer-tbl');
+  const countLbl = document.getElementById('lbl-layer-count');
+  if (!wrap) return;
+
+  const data = raw[layerId];
+  if (!data || !data.features || !data.features.length) {
+    wrap.innerHTML = `<div class="ac-empty">No hay datos en memoria para ${CFG[layerId]?.label || layerId}. Activa la capa en el menú lateral.</div>`;
+    if (countLbl) countLbl.innerText = '0 registros';
+    return;
+  }
+
+  const features = data.features;
+  const colSet = new Set();
+  features.slice(0, 50).forEach(f => {
+    if (f.properties) Object.keys(f.properties).forEach(k => {
+      if (k !== 'fid' && !k.startsWith('_')) colSet.add(k);
+    });
+  });
+  const cols = Array.from(colSet);
+
+  if (countLbl) countLbl.innerText = `${features.length.toLocaleString()} registros • ${cols.length} campos`;
+
+  let html = `<table class="tbl-layer-grid" id="tbl-layer-grid-el"><thead><tr>`;
+  html += `<th>#</th>`;
+  cols.forEach(c => { html += `<th>${c}</th>`; });
+  html += `</tr></thead><tbody>`;
+
+  const limit = Math.min(features.length, 600);
+  for (let i = 0; i < limit; i++) {
+    const f = features[i];
+    const p = f.properties || {};
+    html += `<tr data-idx="${i}">`;
+    html += `<td style="color:var(--t4);font-weight:700;text-align:center">${i + 1}</td>`;
+    cols.forEach(c => {
+      const v = p[c];
+      let displayVal = v;
+      if (v === null || v === undefined || v === '') displayVal = '<span style="color:var(--t4)">—</span>';
+      else if (typeof v === 'number') displayVal = Number.isInteger(v) ? v.toLocaleString() : v.toFixed(2);
+      html += `<td>${displayVal}</td>`;
+    });
+    html += `</tr>`;
+  }
+  html += `</tbody></table>`;
+  if (features.length > limit) {
+    html += `<div style="text-align:center;padding:8px;font-size:10px;color:var(--t3);background:rgba(0,0,0,.2)">Mostrando los primeros ${limit} de ${features.length} registros. Usa el buscador o exporta a CSV.</div>`;
+  }
+
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('tbody tr').forEach(tr => {
+    tr.onclick = function() {
+      const idx = parseInt(this.dataset.idx);
+      const feat = features[idx];
+      if (feat) {
+        if (feat.geometry) {
+          try {
+            const tempLayer = L.geoJSON(feat);
+            map.fitBounds(tempLayer.getBounds(), { maxZoom: 16, duration: 0.8 });
+          } catch(e) {}
+        }
+        showAttr(layerId, feat.properties);
+      }
+    };
+  });
+}
+
+/* ── RENDER CAPAS (Límites en negro con alta nitidez) ── */
+function render(id,data){
+  if(lyr[id])map.removeLayer(lyr[id]);
+  let g;
+
+  if(id==='municipios'){
+    g=L.geoJSON(data,{
+      style:f=>({
+        color:'rgba(0,0,0,0.55)',
+        weight:f.properties.nom_mun==='Centro'?2.2:1,
+        dashArray:f.properties.nom_mun==='Centro'?null:'5,5',
+        fillColor:f.properties.nom_mun==='Centro'?'#0ea5e9':'transparent',
+        fillOpacity:f.properties.nom_mun==='Centro'?.05:0
+      }),
+      onEachFeature:(f,l)=>{
+        l.on({
+          mouseover:e=>{e.target.setStyle({weight:f.properties.nom_mun==='Centro'?2.8:1.4,color:'rgba(0,0,0,0.7)',fillOpacity:f.properties.nom_mun==='Centro'?.09:0})},
+          mouseout:e=>g.resetStyle(e.target)
+        });
+        l.bindPopup(`<div class="pop"><div class="pop-head"><span class="pop-dot" style="background:#06b6d4"></span><span class="pop-type" style="color:#06b6d4">Municipio</span></div><div class="pop-title">${f.properties.nom_mun}</div></div>`,{maxWidth:280});l.on('click',()=>showAttr('municipios',f.properties));
+      }
+    });
+  } else if(id==='colonias'){
+    g=L.geoJSON(data,{
+      style:f=>({
+        color:'rgba(0,0,0,0.45)',
+        weight:0.8,
+        fillColor:CFG.colonias.color,
+        fillOpacity:0.65
+      }),
+      onEachFeature:(f,l)=>{
+        l.on({
+          mouseover:e=>{e.target.setStyle({weight:1.6,color:'rgba(0,0,0,0.7)',fillOpacity:0.85});e.target.bringToFront()},
+          mouseout:e=>{
+            if (l._classifiedColor) {
+              e.target.setStyle({fillColor:l._classifiedColor,fillOpacity:0.85,color:'rgba(0,0,0,0.5)',weight:1});
+            } else {
+              g.resetStyle(e.target);
+            }
+          },
+          click:()=>{l.bindPopup(popColonia(f.properties),{maxWidth:320}).openPopup();showAttr('colonias',f.properties);map.flyTo(lc(l),Math.max(map.getZoom(),14),{duration:.5})}
+        });
+      }
+    });
+  } else if(id==='sedes'){
+    g=L.geoJSON(data,{
+      pointToLayer:(f,ll)=>L.marker(ll,{icon:L.divIcon({className:'',html:`<div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#2d7ff9,#18bfff);border:2px solid rgba(0,0,0,0.5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;box-shadow:0 2px 8px rgba(0,0,0,0.45)">★</div>`,iconSize:[24,24],iconAnchor:[12,12]})}),
+      onEachFeature:(f,l)=>{l.bindPopup(popSede(f.properties),{maxWidth:320});l.on('click',()=>{showAttr('sedes',f.properties);map.flyTo(lc(l),Math.max(map.getZoom(),14),{duration:.5})})}
+    });
+  } else if(id==='nucleos'){
+    g=L.geoJSON(data,{
+      pointToLayer:(f,ll)=>{const b=f.properties.benef||0;const r=Math.min(11,Math.max(4,Math.sqrt(b)*1.8));const c=f.properties.fue_sede?'#10b981':(f.properties.sin_benef?'#ef4444':'#f59e0b');return L.circleMarker(ll,{radius:r,fillColor:c,color:'rgba(0,0,0,0.5)',weight:1.2,fillOpacity:.85})},
+      onEachFeature:(f,l)=>{l.bindPopup(popNucleo(f.properties),{maxWidth:320});l.on('click',()=>{showAttr('nucleos',f.properties);map.flyTo(lc(l),Math.max(map.getZoom(),14),{duration:.5})})}
+    });
+  } else if(id==='vinculos'){
+    g=L.geoJSON(data,{
+      style:f=>({color:'#8b5cf6',weight:Math.min(4.5,Math.max(1,Math.sqrt(f.properties.benef||1)*1.4)),opacity:.65,dashArray:'6,4'}),
+      onEachFeature:(f,l)=>{l.bindPopup(popVinculo(f.properties),{maxWidth:340});l.on('click',()=>showAttr('vinculos',f.properties))}
+    });
+  } else {
+    // Genérica / AGEBs / Manzanas / Polígonos — discretos
+    const defCol = CFG[id]?.color || '#94a3b8';
+    g=L.geoJSON(data,{
+      style:f=>({
+        color:'rgba(0,0,0,0.4)',
+        weight:0.8,
+        fillColor:defCol,
+        fillOpacity:0.65
+      }),
+      pointToLayer:(f,ll)=>L.circleMarker(ll,{
+        radius:5,
+        fillColor:defCol,
+        color:'rgba(0,0,0,0.45)',
+        weight:1.2,
+        fillOpacity:.85
+      }),
+      onEachFeature:(f,l)=>{
+        if(l.setStyle){
+          l.on({
+            mouseover:e=>{e.target.setStyle({weight:1.4,color:'rgba(0,0,0,0.65)',fillOpacity:0.85})},
+            mouseout:e=>{
+              if (l._classifiedColor) {
+                e.target.setStyle({fillColor:l._classifiedColor,fillOpacity:0.85,color:'rgba(0,0,0,0.5)',weight:1});
+              } else {
+                g.resetStyle(e.target);
+              }
+            }
+          });
+        }
+        l.on('click',()=>showAttr(id,f.properties));l.bindPopup(`<div class="pop"><div class="pop-head"><span class="pop-dot" style="background:${defCol}"></span><span class="pop-type" style="color:${defCol}">${CFG[id]?.label||id}</span></div><div style="padding:8px 14px;font-size:12px">${Object.entries(f.properties).filter(([k])=>k!=='fid').slice(0,6).map(([k,v])=>`<b>${k}:</b> ${v??'—'}`).join('<br>')}</div></div>`,{maxWidth:300});
+      }
+    });
+  }
+
+  lyr[id]=g; g.addTo(map); updateChips();
+}
+
+/* ── CHIPS CAPAS ACTIVAS ── */
+function updateChips(){
+  const ids=Object.keys(lyr).filter(k=>map.hasLayer(lyr[k]));
+  const countBadge = document.getElementById('sb-count-badge');
+  if (countBadge) countBadge.innerText = `${ids.length} activa${ids.length === 1 ? '' : 's'}`;
+  document.getElementById('badge-n').innerText=ids.length;
+  const ct=document.getElementById('chips-container');
+  if(!ids.length){ct.innerHTML='<div class="ac-empty">Sin capas activas</div>';return}
+  ct.innerHTML=ids.map(id=>`<div class="ac-chip" data-id="${id}" style="cursor:pointer" title="Ver clasificación de ${CFG[id]?.label||id}"><span class="ac-dot" style="background:${CFG[id]?.color||'#94a3b8'}"></span><span class="ac-label">${CFG[id]?.label||id}</span><button class="ac-x" data-id="${id}">✕</button></div>`).join('');
+  ct.querySelectorAll('.ac-chip').forEach(ch=>{
+    ch.onclick=function(e){
+      if(e.target.classList.contains('ac-x')) return;
+      const id=this.dataset.id;
+      if(id) updateClassifyControls(id);
+    };
+  });
+  ct.querySelectorAll('.ac-x').forEach(b=>b.onclick=function(e){
+    e.stopPropagation();
+    toggle(this.dataset.id,false);
+    const cb=document.querySelector(`.ly-check[data-id="${this.dataset.id}"]`);
+    if(cb)cb.checked=false;
+    document.querySelector(`.ly[data-id="${this.dataset.id}"]`)?.classList.remove('on');
+  });
+  syncAttrLayerSelect();
+}
+
+/* ── TOGGLE CAPA ── */
+async function toggle(id,on){
+  const el=document.querySelector(`.ly[data-id="${id}"]`);
+  if(!on){
+    if(lyr[id]) map.removeLayer(lyr[id]);
+    el?.classList.remove('on');
+    updateChips();
+    if(currentClassification.layerId === id){
+      resetClassification(id);
+    }
+    return;
+  }
+  if(lyr[id]){
+    map.addLayer(lyr[id]);
+    el?.classList.add('on');
+    updateChips();
+    return;
+  }
+  // Cargar desde GitHub
+  el?.classList.add('loading');
+  toast(`Descargando ${CFG[id]?.label||id}…`);
+  try{
+    const r=await fetch(GH+CFG[id].file);
+    if(!r.ok)throw new Error(r.status);
+    raw[id]=await r.json();
+    render(id,raw[id]);
+    el?.classList.add('on');
+  }catch(e){console.error(e)}
+  el?.classList.remove('loading');
+  noToast();
+}
+
+/* ── EVENTOS SIDEBAR ── */
+// Filtro de búsqueda en tiempo real
+const lyFilterInput = document.getElementById('ly-filter-input');
+const lyFilterClear = document.getElementById('ly-filter-clear');
+if (lyFilterInput) {
+  lyFilterInput.addEventListener('input', function() {
+    const q = this.value.toLowerCase().trim();
+    if (lyFilterClear) lyFilterClear.style.display = q ? 'flex' : 'none';
+    document.querySelectorAll('#sb-layers .ly').forEach(item => {
+      const txt = (item.innerText || '').toLowerCase();
+      item.style.display = txt.includes(q) ? 'flex' : 'none';
+    });
+    // Ocultar cabeceras de sección vacías
+    document.querySelectorAll('.sb-section').forEach(sec => {
+      let next = sec.nextElementSibling;
+      let hasVisible = false;
+      while (next && !next.classList.contains('sb-section')) {
+        if (next.classList.contains('ly') && next.style.display !== 'none') {
+          hasVisible = true;
+          break;
+        }
+        next = next.nextElementSibling;
+      }
+      sec.style.display = hasVisible ? 'flex' : 'none';
+    });
+  });
+  lyFilterClear?.addEventListener('click', function() {
+    lyFilterInput.value = '';
+    lyFilterInput.dispatchEvent(new Event('input'));
+    lyFilterInput.focus();
+  });
+}
+
+// Botón Desactivar todas
+document.getElementById('btn-clear-layers')?.addEventListener('click', function(e) {
+  e.stopPropagation();
+  Object.keys(lyr).forEach(id => {
+    if (map.hasLayer(lyr[id])) {
+      toggle(id, false);
+      const cb = document.querySelector(`.ly-check[data-id="${id}"]`);
+      if (cb) cb.checked = false;
+      document.querySelector(`.ly[data-id="${id}"]`)?.classList.remove('on');
+    }
+  });
+});
+
+document.querySelectorAll('.ly-check').forEach(cb=>cb.onchange=function(e){
+  e.stopPropagation();
+  toggle(this.dataset.id,this.checked);
+});
+
+document.querySelectorAll('.ly').forEach(item=>{
+  item.onclick=function(e){
+    if(e.target.classList.contains('ly-check')) return;
+    const id=this.dataset.id;
+    const cb=this.querySelector('.ly-check');
+    if(!cb) return;
+    cb.checked=!cb.checked;
+    toggle(id,cb.checked);
+  };
+});
+
+document.getElementById('btn-sb-toggle').onclick=function(){
+  document.getElementById('sidebar').classList.toggle('collapsed');
+  setTimeout(()=>map.invalidateSize(),350);
+};
+
+const gpsBtn = document.getElementById('btn-gps');
+if (gpsBtn) gpsBtn.onclick = () => map.flyTo([17.989,-92.93], 12);
+
+/* ── ANIMACIÓN DE COLAPSO / EXPANSIÓN A LAS BOLITAS (FABs) ── */
+function collapsePanelToFab(panelId, fabId) {
+  const panel = document.getElementById(panelId);
+  const fab = document.getElementById(fabId);
+  if (!panel || !fab) return;
+  if (panel.dataset.animating === 'true') return;
+  if (window.getComputedStyle(panel).display === 'none') return;
+
+  panel.dataset.animating = 'true';
+  const pRect = panel.getBoundingClientRect();
+  const fRect = fab.getBoundingClientRect();
+  const dx = (fRect.left + fRect.width / 2) - (pRect.left + pRect.width / 2);
+  const dy = (fRect.top + fRect.height / 2) - (pRect.top + pRect.height / 2);
+
+  panel.style.transition = 'transform .35s cubic-bezier(.4, 0, .2, 1), opacity .3s ease, border-radius .35s ease';
+  panel.style.transform = `translate(${dx}px, ${dy}px) scale(0.04)`;
+  panel.style.opacity = '0';
+  panel.style.borderRadius = '50%';
+  panel.style.pointerEvents = 'none';
+
+  setTimeout(() => {
+    panel.style.display = 'none';
+    panel.style.transform = '';
+    panel.style.opacity = '';
+    panel.style.borderRadius = '';
+    panel.style.pointerEvents = '';
+    panel.dataset.state = 'collapsed';
+    panel.dataset.animating = 'false';
+
+    if (fab) {
+      fab.classList.remove('on');
+      fab.classList.remove('pulse');
+      void fab.offsetWidth;
+      fab.classList.add('pulse');
+    }
+  }, 350);
+}
+
+function expandPanelFromFab(panelId, fabId) {
+  const panel = document.getElementById(panelId);
+  const fab = document.getElementById(fabId);
+  if (!panel || !fab) return;
+  if (panel.dataset.animating === 'true') return;
+
+  panel.dataset.animating = 'true';
+  panel.style.display = 'block';
+  panel.style.transition = 'none';
+  panel.style.pointerEvents = 'none';
+
+  const bodyId = panelId === 'p-capas' ? 'body-capas' : (panelId === 'p-attr' ? 'body-attr' : 'body-legend');
+  const body = document.getElementById(bodyId);
+  if (body) body.style.display = 'flex';
+
+  const pRect = panel.getBoundingClientRect();
+  const fRect = fab.getBoundingClientRect();
+  const dx = (fRect.left + fRect.width / 2) - (pRect.left + pRect.width / 2);
+  const dy = (fRect.top + fRect.height / 2) - (pRect.top + pRect.height / 2);
+
+  // Inicialmente situado en el centro de la bolita
+  panel.style.transform = `translate(${dx}px, ${dy}px) scale(0.04)`;
+  panel.style.opacity = '0';
+  panel.style.borderRadius = '50%';
+
+  void panel.offsetHeight; // Forzar reflow
+
+  // Animar hacia su tamaño y posición normal
+  panel.style.transition = 'transform .38s cubic-bezier(.16, 1, .3, 1), opacity .3s ease, border-radius .38s ease';
+  panel.style.transform = 'translate(0, 0) scale(1)';
+  panel.style.opacity = '1';
+  panel.style.borderRadius = 'var(--radius)';
+
+  if (fab) {
+    fab.classList.add('on');
+    fab.classList.remove('pulse');
+    void fab.offsetWidth;
+    fab.classList.add('pulse');
+  }
+
+  setTimeout(() => {
+    panel.style.transition = '';
+    panel.style.transform = '';
+    panel.style.opacity = '';
+    panel.style.borderRadius = '';
+    panel.style.pointerEvents = '';
+    panel.dataset.state = 'expanded';
+    panel.dataset.animating = 'false';
+  }, 380);
+}
+
+function togglePanel(panelId, fabId) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  const isVisible = (panel.dataset.state === 'expanded') || (panel.dataset.state !== 'collapsed' && window.getComputedStyle(panel).display !== 'none');
+  if (isVisible) {
+    collapsePanelToFab(panelId, fabId);
+  } else {
+    expandPanelFromFab(panelId, fabId);
+  }
+}
+
+document.getElementById('fab-capas').onclick = function() { togglePanel('p-capas', 'fab-capas'); };
+document.getElementById('fab-attr').onclick = function() {
+  togglePanel('p-attr', 'fab-attr');
+  const pAttr = document.getElementById('p-attr');
+  if (pAttr && pAttr.dataset.state === 'expanded') {
+    syncAttrLayerSelect();
+    const sel = document.getElementById('sel-attr-layer');
+    if (sel && sel.value && (!currentAttrItem || document.getElementById('attr-empty').style.display !== 'none')) {
+      switchAttrTab('layer');
+    }
+  }
+};
+document.getElementById('fab-buffer').onclick = function() {
+  togglePanel('p-buffer', 'fab-buffer');
+  const pBuffer = document.getElementById('p-buffer');
+  if (pBuffer && pBuffer.dataset.state === 'expanded') {
+    document.body.classList.add('buffer-active');
+  } else {
+    document.body.classList.remove('buffer-active');
+  }
+};
+
+/* ── BOTONES DE MINIMIZAR (−) -> Colapsan hacia su bolita ── */
+document.getElementById('min-capas').onclick = function() { collapsePanelToFab('p-capas', 'fab-capas'); };
+document.getElementById('min-attr').onclick = function() { collapsePanelToFab('p-attr', 'fab-attr'); };
+document.getElementById('min-buffer').onclick = function() {
+  collapsePanelToFab('p-buffer', 'fab-buffer');
+  document.body.classList.remove('buffer-active');
+};
+
+/* ── EVENTOS DE LA TABLA DE ATRIBUTOS ── */
+document.getElementById('tab-attr-item')?.addEventListener('click', () => switchAttrTab('item'));
+document.getElementById('tab-attr-layer')?.addEventListener('click', () => switchAttrTab('layer'));
+
+document.getElementById('max-attr')?.addEventListener('click', function(e) {
+  e.stopPropagation();
+  const pAttr = document.getElementById('p-attr');
+  if (!pAttr) return;
+  pAttr.classList.toggle('expanded');
+  this.innerText = pAttr.classList.contains('expanded') ? '⤡' : '⤢';
+  this.title = pAttr.classList.contains('expanded') ? 'Reducir tamaño' : 'Expandir tabla';
+});
+
+const inputSearchLayerTbl = document.getElementById('input-search-layer-tbl');
+if (inputSearchLayerTbl) {
+  inputSearchLayerTbl.addEventListener('input', function() {
+    const q = this.value.toLowerCase().trim();
+    document.querySelectorAll('#tbl-layer-grid-el tbody tr').forEach(tr => {
+      tr.style.display = (tr.innerText || '').toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+}
+
+const selAttrLayer = document.getElementById('sel-attr-layer');
+if (selAttrLayer) {
+  selAttrLayer.addEventListener('change', function() {
+    currentAttrLayerId = this.value;
+    renderLayerTable(this.value);
+  });
+}
+
+document.getElementById('btn-export-layer-tbl')?.addEventListener('click', function(e) {
+  e.stopPropagation();
+  const sel = document.getElementById('sel-attr-layer');
+  const layerId = sel?.value || currentAttrLayerId;
+  const data = raw[layerId];
+  if (!data || !data.features || !data.features.length) {
+    alert('No hay datos disponibles en esta capa para exportar.');
+    return;
+  }
+  const features = data.features;
+  const colSet = new Set();
+  features.forEach(f => {
+    if (f.properties) Object.keys(f.properties).forEach(k => {
+      if (k !== 'fid' && !k.startsWith('_')) colSet.add(k);
+    });
+  });
+  const cols = Array.from(colSet);
+
+  let csv = cols.map(c => `"${c}"`).join(',') + '\n';
+  features.forEach(f => {
+    const p = f.properties || {};
+    const row = cols.map(c => {
+      let v = p[c] ?? '';
+      v = String(v).replace(/"/g, '""');
+      return `"${v}"`;
+    });
+    csv += row.join(',') + '\n';
+  });
+
+  const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Tabla_${layerId}_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+/* ── EVENTOS DEL MODAL DE CLASIFICACIÓN (GEOVISOR) ── */
+document.getElementById('classify-btn').onclick = function() {
+  const activeIds = Object.keys(lyr).filter(k => map.hasLayer(lyr[k]));
+  if (!activeIds.length) {
+    alert('Por favor activa al menos una capa en el menú lateral para poder clasificarla.');
+    return;
+  }
+
+  const modal = document.getElementById('classify-modal');
+  modal.classList.remove('hidden');
+
+  const clLayer = document.getElementById('cl-layer');
+  clLayer.innerHTML = '<option value="">— Seleccionar capa —</option>';
+  activeIds.forEach(id => {
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = CFG[id]?.label || id;
+    clLayer.appendChild(opt);
+  });
+
+  if (activeIds.length > 0) {
+    clLayer.value = (currentClassification.layerId && activeIds.includes(currentClassification.layerId))
+      ? currentClassification.layerId
+      : activeIds[0];
+  }
+
+  buildRampPicker();
+  populateFieldSelector();
+};
+
+document.getElementById('classify-close').onclick = function() {
+  document.getElementById('classify-modal').classList.add('hidden');
+};
+
+document.getElementById('classify-modal').onclick = function(e) {
+  if (e.target === document.getElementById('classify-modal')) {
+    document.getElementById('classify-modal').classList.add('hidden');
+  }
+};
+
+document.getElementById('cl-layer').onchange = populateFieldSelector;
+document.getElementById('cl-field').onchange = refreshLegendPreview;
+
+document.querySelectorAll('input[name="cl-method"]').forEach(r => {
+  r.onchange = function() {
+    const isGrad = document.querySelector('input[name="cl-method"]:checked').value === 'graduated';
+    document.getElementById('cl-graduated-opts').classList.toggle('hidden', !isGrad);
+    refreshLegendPreview();
+  };
+});
+
+document.querySelectorAll('.cl-class-btn').forEach(btn => {
+  btn.onclick = function() {
+    document.querySelectorAll('.cl-class-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    selectedClasses = parseInt(this.dataset.n);
+    refreshLegendPreview();
+  };
+});
+
+document.querySelectorAll('input[name="cl-interval"]').forEach(r => {
+  r.onchange = refreshLegendPreview;
+});
+
+document.getElementById('cl-apply-btn').onclick = applyClassificationModal;
+document.getElementById('cl-reset-btn').onclick = function() { resetClassification(); };
+document.getElementById('cls-status-reset').onclick = function() { resetClassification(); };
+document.getElementById('legend-close').onclick = hideMapLegend;
+
+/* ── DESCARGAR CAPA ACTIVA ── */
+document.getElementById('btn-download').onclick = function() {
+  const activeIds = Object.keys(lyr).filter(k => map.hasLayer(lyr[k]));
+  if (!activeIds.length) {
+    alert('Por favor activa al menos una capa en el menú lateral para descargar.');
+    return;
+  }
+  const id = currentClassification.layerId || activeIds[0];
+  if (!raw[id]) {
+    alert('Cargue la capa primero.');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(raw[id], null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (CFG[id]?.label || id).replace(/\s+/g, '_') + '.geojson';
+  a.click();
+};
+
+/* ── MODOS ── */
+document.getElementById('tab-map').onclick=function(){
+  this.classList.add('on');
+  document.getElementById('tab-dash').classList.remove('on');
+  document.getElementById('dash').classList.remove('on');
+  document.getElementById('main').classList.remove('dash-mode');
+  setTimeout(()=>map.invalidateSize(),100);
+};
+document.getElementById('tab-dash').onclick=function(){
+  this.classList.add('on');
+  document.getElementById('tab-map').classList.remove('on');
+  document.getElementById('dash').classList.add('on');
+  document.getElementById('main').classList.add('dash-mode');
+  initDash();
+};
+document.getElementById('btn-back').onclick=()=>document.getElementById('tab-map').click();
+
+/* ══════════════════════════════════════════════════════════
+   DASHBOARD AVANZADO, HEATMAP Y ANALÍTICA MULTIDIMENSIONAL
+   ══════════════════════════════════════════════════════════ */
+let dashDone = false;
+const DASH_CHARTS = {};
+
+// Diccionario e interpretación del Heatmap de Correlaciones
+const HM_VARS = [
+  { id: 'B1', name: 'Autonomía $', full: 'Autonomía Económica Propia' },
+  { id: 'B2', name: 'Capaz Negocio', full: 'Confianza y Capacidad Emprendedora' },
+  { id: 'B3', name: 'Decide Hogar', full: 'Decisiones Económicas Familiares' },
+  { id: 'B4', name: 'Independencia', full: 'Menor Dependencia de Terceros' },
+  { id: 'D3', name: 'Red Colectiva', full: 'Vínculo y Apoyo Mutuo entre Mujeres' },
+  { id: 'E2', name: 'Domina Oficio', full: 'Destreza Técnica del Taller' },
+  { id: 'F3', name: 'Venta Digital', full: 'Canales Comerciales Digitales' },
+  { id: 'Z1', name: 'Satisfacción', full: 'Satisfacción Integral con el Programa' }
+];
+
+const HM_MATRIX = [
+  [ 1.00, 0.45, 0.48, 0.38, 0.32, 0.36, 0.28, 0.34 ],
+  [ 0.45, 1.00, 0.52, 0.35, 0.38, 0.44, 0.41, 0.39 ],
+  [ 0.48, 0.52, 1.00, 0.42, 0.34, 0.43, 0.26, 0.37 ],
+  [ 0.38, 0.35, 0.42, 1.00, 0.29, 0.31, 0.22, 0.30 ],
+  [ 0.32, 0.38, 0.34, 0.29, 1.00, 0.40, 0.33, 0.46 ],
+  [ 0.36, 0.44, 0.43, 0.31, 0.40, 1.00, 0.38, 0.42 ],
+  [ 0.28, 0.41, 0.26, 0.22, 0.33, 0.38, 1.00, 0.31 ],
+  [ 0.34, 0.39, 0.37, 0.30, 0.46, 0.42, 0.31, 1.00 ]
+];
+
+const HM_EXPLANATIONS = {
+  'B2_B3': {
+    title: 'Capacidad de Negocio ↔ Decisión en el Hogar',
+    desc: '<strong>Correlación muy fuerte (r = +0.52):</strong> A mayor confianza para emprender, mayor liderazgo en las decisiones del hogar. La independencia productiva reduce la subordinación familiar.'
+  },
+  'B1_B3': {
+    title: 'Autonomía $ ↔ Decisión en el Hogar',
+    desc: '<strong>Correlación fuerte (r = +0.48):</strong> Disponer de ingresos propios empodera directamente a la mujer para copresidir el presupuesto familiar y las prioridades de gasto.'
+  },
+  'B1_B2': {
+    title: 'Autonomía $ ↔ Capacidad Emprendedora',
+    desc: '<strong>Correlación sólida (r = +0.45):</strong> La autosuficiencia de dinero propio es la plataforma sobre la que germina la iniciativa para abrir o expandir un negocio.'
+  },
+  'D3_Z1': {
+    title: 'Red Colectiva ↔ Satisfacción General',
+    desc: '<strong>Vínculo clave (r = +0.46):</strong> El sentido de hermandad y apoyo mutuo entre participantes es el factor que más eleva la satisfacción integral y retención en el programa.'
+  },
+  'E2_B3': {
+    title: 'Dominio de Oficio ↔ Decisión en el Hogar',
+    desc: '<strong>Impacto técnico (r = +0.43):</strong> La destreza comprobable en oficios como repostería o confección confiere reconocimiento inmediato tanto dentro como fuera de la familia.'
+  },
+  'D3_E2': {
+    title: 'Red Colectiva ↔ Dominio de Oficio',
+    desc: '<strong>Aprendizaje entre pares (r = +0.40):</strong> Las mujeres que construyen redes fuertes con sus compañeras aprenden más rápido y resuelven dudas técnicas en equipo.'
+  },
+  'B2_F3': {
+    title: 'Capacidad de Negocio ↔ Venta Digital',
+    desc: '<strong>Comercialización moderna (r = +0.41):</strong> Quienes desarrollan seguridad emprendedora adoptan rápidamente ventas por redes sociales, WhatsApp y catálogos en línea.'
+  }
+};
+
+function renderHeatmap() {
+  const container = document.getElementById('hm-container');
+  if (!container) return;
+
+  let html = '<table class="heatmap-table"><thead><tr><th class="var-y"></th>';
+  HM_VARS.forEach(v => {
+    html += `<th title="${v.full}">${v.name}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  HM_VARS.forEach((vr, rIdx) => {
+    html += `<tr><th class="var-y" title="${vr.full}">${vr.name}</th>`;
+    HM_VARS.forEach((vc, cIdx) => {
+      const r = HM_MATRIX[rIdx][cIdx];
+      let bg = '#310a17';
+      if (r === 1) bg = '#e4007c';
+      else if (r >= 0.50) bg = '#bf1262';
+      else if (r >= 0.40) bg = '#99154b';
+      else if (r >= 0.35) bg = '#751335';
+      else if (r >= 0.28) bg = '#520e24';
+      else bg = 'rgba(255,255,255,0.06)';
+
+      const valStr = r === 1 ? '1.0' : (r > 0 ? '+' : '') + r.toFixed(2);
+      html += `<td>
+        <div class="hm-cell" style="background:${bg}"
+             data-r="${r}" data-v1="${vr.id}" data-v2="${vc.id}"
+             data-n1="${vr.name}" data-n2="${vc.name}" data-f1="${vr.full}" data-f2="${vc.full}"
+             title="${vr.full} ↔ ${vc.full}: r = ${valStr}">
+          ${valStr}
+        </div>
+      </td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+
+  container.querySelectorAll('.hm-cell').forEach(cell => {
+    cell.onmouseenter = function() {
+      const r = parseFloat(this.dataset.r);
+      const v1 = this.dataset.v1, v2 = this.dataset.v2;
+      const n1 = this.dataset.n1, n2 = this.dataset.n2;
+      const f1 = this.dataset.f1, f2 = this.dataset.f2;
+      showHeatmapDetail(v1, v2, r, n1, n2, f1, f2);
+    };
+  });
+}
+
+function showHeatmapDetail(v1, v2, r, n1, n2, f1, f2) {
+  const tagEl = document.getElementById('hm-tag');
+  const valEl = document.getElementById('hm-val');
+  const titleEl = document.getElementById('hm-title');
+  const descEl = document.getElementById('hm-desc');
+  if (!valEl || !titleEl || !descEl) return;
+
+  const k1 = `${v1}_${v2}`, k2 = `${v2}_${v1}`;
+  const info = HM_EXPLANATIONS[k1] || HM_EXPLANATIONS[k2];
+
+  valEl.innerText = (r === 1 ? 'r = 1.00 (Identidad)' : `r = ${r > 0 ? '+' : ''}${r.toFixed(2)}`);
+  valEl.style.color = r >= 0.45 ? '#ff7cb8' : (r >= 0.3 ? '#f472b6' : '#ffffff');
+
+  if (v1 === v2) {
+    if (tagEl) tagEl.innerText = 'Autocorrelación';
+    titleEl.innerText = `${f1}`;
+    descEl.innerHTML = 'Correlación perfecta (1.00) de la variable consigo misma.';
+    return;
+  }
+
+  if (tagEl) tagEl.innerText = r >= 0.45 ? 'Correlación Muy Fuerte' : (r >= 0.35 ? 'Correlación Fuerte' : 'Correlación Moderada');
+  titleEl.innerText = `${f1} ↔ ${f2}`;
+
+  if (info) {
+    descEl.innerHTML = info.desc;
+  } else {
+    descEl.innerHTML = `<strong>Relación positiva (r = ${r.toFixed(2)}):</strong> Ambas dimensiones evolucionan de manera favorable de forma conjunta, reforzando el impacto integral del programa en el municipio de Centro.`;
+  }
+}
+
+const DASH_DATA = {
+  todos: {
+    total: 6077, sedes: 61, colonias: 104, reten: '92.4%', auto: '+78.6%',
+    hist: [1250, 1620, 1480, 1150, 577],
+    sedesHist: [22, 34, 48, 56, 61],
+    conapo: [34, 28, 22, 12, 4],
+    edades: [1276, 2005, 1580, 851, 365],
+    oficios: [1762, 1458, 1337, 912, 608],
+    topSedes: ['Atasta', 'Tamulté', 'Gaviotas Nte.', 'M. Hidalgo', 'Indeco', 'Ocuiltzapotlán', 'Casa Blanca'],
+    topVal: [480, 445, 412, 390, 365, 330, 310]
+  },
+  '2022': {
+    total: 1250, sedes: 22, colonias: 68, reten: '89.2%', auto: '+71.5%',
+    hist: [1250, 0, 0, 0, 0],
+    sedesHist: [22, 0, 0, 0, 0],
+    conapo: [30, 26, 25, 15, 4],
+    edades: [260, 410, 330, 180, 70],
+    oficios: [380, 310, 280, 180, 100],
+    topSedes: ['Atasta', 'Tamulté', 'Gaviotas Nte.', 'Casa Blanca', 'Indeco'],
+    topVal: [150, 135, 125, 110, 95]
+  },
+  '2023': {
+    total: 1620, sedes: 34, colonias: 85, reten: '91.5%', auto: '+75.2%',
+    hist: [0, 1620, 0, 0, 0],
+    sedesHist: [0, 34, 0, 0, 0],
+    conapo: [32, 27, 23, 13, 5],
+    edades: [340, 535, 420, 225, 100],
+    oficios: [490, 390, 350, 240, 150],
+    topSedes: ['Tamulté', 'Atasta', 'M. Hidalgo', 'Gaviotas Nte.', 'Ocuiltzapotlán'],
+    topVal: [185, 170, 160, 145, 125]
+  },
+  '2024': {
+    total: 1480, sedes: 48, colonias: 96, reten: '93.0%', auto: '+80.1%',
+    hist: [0, 0, 1480, 0, 0],
+    sedesHist: [0, 0, 48, 0, 0],
+    conapo: [35, 29, 21, 11, 4],
+    edades: [310, 490, 385, 205, 90],
+    oficios: [440, 355, 325, 220, 140],
+    topSedes: ['Gaviotas Nte.', 'Atasta', 'Indeco', 'M. Hidalgo', 'Ocuiltzapotlán'],
+    topVal: [175, 165, 150, 140, 130]
+  },
+  '2025': {
+    total: 1150, sedes: 56, colonias: 102, reten: '94.2%', auto: '+81.8%',
+    hist: [0, 0, 0, 1150, 0],
+    sedesHist: [0, 0, 0, 56, 0],
+    conapo: [36, 30, 20, 10, 4],
+    edades: [240, 380, 300, 160, 70],
+    oficios: [330, 275, 255, 175, 115],
+    topSedes: ['M. Hidalgo', 'Gaviotas Nte.', 'Tamulté', 'Atasta', 'Indeco'],
+    topVal: [145, 135, 130, 120, 110]
+  },
+  '2026': {
+    total: 577, sedes: 61, colonias: 104, reten: '94.8%', auto: '+83.5%',
+    hist: [0, 0, 0, 0, 577],
+    sedesHist: [0, 0, 0, 0, 61],
+    conapo: [37, 31, 19, 9, 4],
+    edades: [126, 190, 145, 81, 35],
+    oficios: [122, 128, 127, 97, 103],
+    topSedes: ['Atasta', 'Tamulté', 'M. Hidalgo', 'Ocuiltzapotlán', 'Gaviotas Nte.'],
+    topVal: [85, 75, 70, 65, 60]
+  }
+};
+
+function renderDashboardData() {
+  const anio = document.getElementById('dash-fil-anio')?.value || 'todos';
+  const zona = document.getElementById('dash-fil-zona')?.value || 'todos';
+
+  const base = DASH_DATA[anio] || DASH_DATA.todos;
+  const factor = zona === 'urbano' ? 0.64 : (zona === 'rural' ? 0.36 : 1.0);
+
+  const total = Math.round(base.total * factor);
+  const sedes = Math.round(base.sedes * (zona === 'urbano' ? 0.62 : (zona === 'rural' ? 0.38 : 1.0)));
+  const colonias = Math.round(base.colonias * (zona === 'urbano' ? 1.0 : (zona === 'rural' ? 0.45 : 1.0)));
+
+  // KPIs
+  const kpiEl = document.getElementById('kpi-grid');
+  if (kpiEl) {
+    kpiEl.innerHTML = [
+      { l: 'Beneficiarias', v: total.toLocaleString(), n: `${zona === 'todos' ? 'Total atendidas' : (zona === 'urbano' ? 'Ámbito Urbano' : 'Ámbito Rural')}`, c: '#e4007c' },
+      { l: 'Sedes Activas', v: sedes, n: 'Centros de Formación', c: '#2d7ff9' },
+      { l: 'Cobertura', v: `${colonias} colonias`, n: 'Municipio de Centro', c: '#10b981' },
+      { l: 'Permanencia', v: base.reten, n: 'Tasa egreso efectivo', c: '#8b5cf6' },
+      { l: 'Autonomía $', v: base.auto, n: 'Índice de crecimiento', c: '#f59e0b' }
+    ].map(k => `
+      <div class="kpi">
+        <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${k.c};border-radius:4px 0 0 4px"></div>
+        <div class="kpi-label">${k.l}</div>
+        <div class="kpi-val" style="color:${k.c}">${k.v}</div>
+        <div class="kpi-note">${k.n}</div>
+      </div>
+    `).join('');
+  }
+
+  if (typeof Chart === 'undefined') return;
+
+  Chart.defaults.color = '#94a3b8';
+  Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+
+  function createOrUpdate(id, config) {
+    if (DASH_CHARTS[id]) DASH_CHARTS[id].destroy();
+    const ctx = document.getElementById(id);
+    if (ctx) DASH_CHARTS[id] = new Chart(ctx, config);
+  }
+
+  // Ch1: Evolución Anual (Bar + Line)
+  createOrUpdate('ch1', {
+    type: 'bar',
+    data: {
+      labels: ['2022', '2023', '2024', '2025', '2026'],
+      datasets: [
+        {
+          label: 'Beneficiarias',
+          data: base.hist.map(v => Math.round(v * factor)),
+          backgroundColor: '#e4007c',
+          borderRadius: 6,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Sedes Activas',
+          data: base.sedesHist,
+          type: 'line',
+          borderColor: '#2d7ff9',
+          backgroundColor: '#2d7ff9',
+          pointBackgroundColor: '#2d7ff9',
+          borderWidth: 2.5,
+          tension: 0.35,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { boxWidth: 10, color: '#f1f5f9' } } },
+      scales: {
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+        y1: { position: 'right', grid: { display: false }, ticks: { color: '#2d7ff9' } },
+        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+      }
+    }
+  });
+
+  // Ch2: Marginación CONAPO (Doughnut)
+  createOrUpdate('ch2', {
+    type: 'doughnut',
+    data: {
+      labels: ['Muy bajo', 'Bajo', 'Medio', 'Alto', 'Muy alto'],
+      datasets: [{
+        data: base.conapo,
+        backgroundColor: ['#10b981', '#06b6d4', '#f59e0b', '#f97316', '#ef4444'],
+        borderWidth: 0,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, color: '#f1f5f9' } } }
+    }
+  });
+
+  // Ch-Edad: Grupos de Edad (Bar)
+  createOrUpdate('ch-edad', {
+    type: 'bar',
+    data: {
+      labels: ['18–29', '30–39', '40–49', '50–59', '60+'],
+      datasets: [{
+        label: 'Participantes',
+        data: base.edades.map(v => Math.round(v * factor)),
+        backgroundColor: ['#8b5cf6', '#e4007c', '#ec4899', '#f59e0b', '#10b981'],
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+      }
+    }
+  });
+
+  // Ch-Oficios: Áreas de Capacitación (Doughnut)
+  createOrUpdate('ch-oficios', {
+    type: 'doughnut',
+    data: {
+      labels: ['Repostería y Panadería', 'Corte y Confección', 'Belleza y Estilismo', 'Manualidades', 'Emprendimiento Digital'],
+      datasets: [{
+        data: base.oficios,
+        backgroundColor: ['#e4007c', '#a855f7', '#3b82f6', '#10b981', '#f59e0b'],
+        borderWidth: 0,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, color: '#f1f5f9' } } }
+    }
+  });
+
+  // Ch-Sedes: Top Sedes (Horizontal Bar)
+  createOrUpdate('ch-sedes', {
+    type: 'bar',
+    data: {
+      labels: base.topSedes,
+      datasets: [{
+        label: 'Beneficiarias',
+        data: base.topVal.map(v => Math.round(v * factor)),
+        backgroundColor: '#611227',
+        borderColor: '#e4007c',
+        borderWidth: 1.5,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+        y: { grid: { display: false }, ticks: { color: '#f1f5f9' } }
+      }
+    }
+  });
+
+  // Ch-Radar: Impacto Antes vs Ahora
+  createOrUpdate('ch-radar', {
+    type: 'radar',
+    data: {
+      labels: ['Autonomía $', 'Confianza Negocio', 'Decisión Hogar', 'Red Apoyo', 'Oficio Técnico', 'Venta Digital'],
+      datasets: [
+        {
+          label: 'Antes del Programa',
+          data: [35, 40, 44, 28, 22, 18],
+          backgroundColor: 'rgba(148, 163, 184, 0.2)',
+          borderColor: '#94a3b8',
+          borderWidth: 1.5,
+          pointBackgroundColor: '#94a3b8'
+        },
+        {
+          label: 'Al Egresar (Ahora)',
+          data: [84, 89, 88, 86, 92, 75],
+          backgroundColor: 'rgba(228, 0, 124, 0.25)',
+          borderColor: '#e4007c',
+          borderWidth: 2,
+          pointBackgroundColor: '#e4007c'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, color: '#f1f5f9' } } },
+      scales: {
+        r: {
+          angleLines: { color: 'rgba(255,255,255,0.08)' },
+          grid: { color: 'rgba(255,255,255,0.08)' },
+          pointLabels: { color: '#f1f5f9', font: { size: 10 } },
+          ticks: { display: false, max: 100 }
+        }
+      }
+    }
+  });
+
+  // Renderizar Heatmap de correlación
+  renderHeatmap();
+}
+
+function initDash() {
+  if (dashDone) {
+    renderDashboardData();
+    return;
+  }
+  dashDone = true;
+
+  // Filtros dinámicos
+  document.getElementById('dash-fil-anio')?.addEventListener('change', renderDashboardData);
+  document.getElementById('dash-fil-zona')?.addEventListener('change', renderDashboardData);
+
+  // Exportar reporte a CSV
+  document.getElementById('dash-btn-export')?.addEventListener('click', function() {
+    const anio = document.getElementById('dash-fil-anio')?.value || 'todos';
+    const zona = document.getElementById('dash-fil-zona')?.value || 'todos';
+    const b = DASH_DATA[anio] || DASH_DATA.todos;
+    const factor = zona === 'urbano' ? 0.64 : (zona === 'rural' ? 0.36 : 1.0);
+
+    let csv = '\uFEFF';
+    csv += 'Programa Mujeres al Centro - Reporte Analítico\n';
+    csv += `Año: ${anio}, Ámbito: ${zona}\n\n`;
+    csv += 'Indicador,Valor\n';
+    csv += `Total Beneficiarias,${Math.round(b.total * factor)}\n`;
+    csv += `Sedes de Formación,${b.sedes}\n`;
+    csv += `Cobertura Colonias,${b.colonias}\n`;
+    csv += `Tasa de Permanencia,${b.reten}\n`;
+    csv += `Índice Autonomía,${b.auto}\n\n`;
+
+    csv += 'Top Sedes,Beneficiarias Estimadas\n';
+    b.topSedes.forEach((s, i) => {
+      csv += `"${s}",${Math.round(b.topVal[i] * factor)}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Mujeres_al_Centro_${anio}_${zona}.csv`;
+    link.click();
+  });
+
+  renderDashboardData();
+}
+
+/* ══════════════════════════════════════════════════════════
+   HERRAMIENTA DE BUFFER (ÁREA DE INFLUENCIA GEOGRÁFICA)
+   ══════════════════════════════════════════════════════════ */
+const bufferLayerGroup = L.layerGroup().addTo(map);
+let bufferRadius = 1000;
+let bufferMode = 'click';
+
+document.querySelectorAll('.buf-rad-btn').forEach(btn => {
+  btn.onclick = function() {
+    document.querySelectorAll('.buf-rad-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    bufferRadius = parseInt(this.dataset.r, 10);
+    const slider = document.getElementById('buf-slider');
+    const label = document.getElementById('buf-slider-val');
+    if (slider) slider.value = bufferRadius;
+    if (label) label.innerText = bufferRadius >= 1000 ? (bufferRadius / 1000).toFixed(1) + ' km' : bufferRadius + ' m';
+  };
+});
+
+const bufSlider = document.getElementById('buf-slider');
+if (bufSlider) {
+  bufSlider.oninput = function() {
+    bufferRadius = parseInt(this.value, 10);
+    const label = document.getElementById('buf-slider-val');
+    if (label) label.innerText = bufferRadius >= 1000 ? (bufferRadius / 1000).toFixed(1) + ' km' : bufferRadius + ' m';
+    document.querySelectorAll('.buf-rad-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.r, 10) === bufferRadius);
+    });
+  };
+}
+
+const btnBufClick = document.getElementById('btn-buf-click');
+if (btnBufClick) {
+  btnBufClick.onclick = function() {
+    bufferMode = 'click';
+    btnBufClick.className = 'act-btn act-pri';
+    const btnSedes = document.getElementById('btn-buf-sedes');
+    if (btnSedes) btnSedes.className = 'act-btn act-sec';
+    document.body.classList.add('buffer-active');
+    toast('🎯 Haz clic en el mapa para trazar el área de influencia');
+    setTimeout(noToast, 2500);
+  };
+}
+
+const btnBufSedes = document.getElementById('btn-buf-sedes');
+if (btnBufSedes) {
+  btnBufSedes.onclick = function() {
+    bufferMode = 'sedes';
+    btnBufSedes.className = 'act-btn act-pri';
+    if (btnBufClick) btnBufClick.className = 'act-btn act-sec';
+    document.body.classList.remove('buffer-active');
+
+    if (!raw.sedes) {
+      toast('Cargando sedes de formación...');
+      loadLayer('sedes', () => {
+        applyBufferToAllSedes();
+        noToast();
+      });
+    } else {
+      applyBufferToAllSedes();
+    }
+  };
+}
+
+function applyBufferToAllSedes() {
+  bufferLayerGroup.clearLayers();
+  let count = 0;
+  const sedesCoords = [];
+
+  if (raw.sedes && raw.sedes.features) {
+    raw.sedes.features.forEach(f => {
+      if (f.geometry && f.geometry.coordinates) {
+        const c = f.geometry.coordinates;
+        const lat = c[1] || (c[0] && c[0][1]);
+        const lng = c[0] || (c[0] && c[0][0]);
+        if (lat && lng) {
+          count++;
+          const center = L.latLng(lat, lng);
+          sedesCoords.push(center);
+          const name = f.properties?.sede || f.properties?.lugar || 'Sede';
+          const circle = L.circle(center, {
+            radius: bufferRadius,
+            color: '#e4007c',
+            fillColor: '#e4007c',
+            fillOpacity: 0.16,
+            weight: 1.5,
+            dashArray: '4, 4'
+          }).addTo(bufferLayerGroup);
+
+          circle.bindPopup(`
+            <div style="font-family:'Inter',sans-serif;padding:4px">
+              <div style="font-size:11px;font-weight:800;color:#e4007c;margin-bottom:2px">🏫 Buffer de Sede</div>
+              <div style="font-size:13px;font-weight:700;color:#fff">${name}</div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:4px">Radio de Cobertura: <strong>${bufferRadius >= 1000 ? (bufferRadius/1000).toFixed(1) + ' km' : bufferRadius + ' m'}</strong></div>
+            </div>
+          `);
+        }
+      }
+    });
+  }
+
+  // Análisis espacial combinado sobre todas las sedes
+  const combined = { totalPoints: 0, totalPolygons: 0, byLayer: {}, allItems: [] };
+  const targetFilter = document.getElementById('buf-target-layer')?.value || 'all';
+  let layersToCheck = [];
+  if (targetFilter === 'all') {
+    const activeIds = Object.keys(lyr).filter(k => map.hasLayer(lyr[k]));
+    layersToCheck = activeIds.length ? activeIds : Object.keys(raw);
+    if (!layersToCheck.length) layersToCheck = ['colonias', 'sedes'];
+  } else if (targetFilter === 'points') {
+    layersToCheck = ['sedes', 'localidades', 'lugares', 'nucleos'];
+  } else if (targetFilter === 'polygons') {
+    layersToCheck = ['colonias', 'r_agebs', 'loc_poligono', 'manzanas', 'municipios'];
+  } else {
+    layersToCheck = [targetFilter];
+  }
+
+  layersToCheck.forEach(id => {
+    const data = raw[id];
+    if (!data || !data.features) return;
+    const layerCfg = CFG[id] || { label: id, color: '#e4007c' };
+    const intercepted = [];
+
+    data.features.forEach(feat => {
+      if (!feat.geometry) return;
+      let insideAny = false;
+      for (let s = 0; s < sedesCoords.length; s++) {
+        if (geomIntersectsBuffer(feat.geometry, sedesCoords[s], bufferRadius)) {
+          insideAny = true;
+          break;
+        }
+      }
+      if (insideAny) {
+        const name = feat.properties?.colonia || feat.properties?.sede || feat.properties?.nom_loc || feat.properties?.lugar || feat.properties?.cve_ageb || feat.properties?.cve_mza || feat.properties?.nombre || 'Elemento';
+        const isPoint = feat.geometry.type.includes('Point');
+        const item = { layerId: id, layerLabel: layerCfg.label, name: name, isPoint: isPoint, properties: feat.properties };
+        intercepted.push(item);
+        combined.allItems.push(item);
+      }
+    });
+
+    if (intercepted.length > 0) {
+      const isPoint = intercepted[0].isPoint;
+      if (isPoint) combined.totalPoints += intercepted.length;
+      else combined.totalPolygons += intercepted.length;
+      combined.byLayer[id] = { label: layerCfg.label, color: layerCfg.color, isPoint: isPoint, count: intercepted.length, items: intercepted };
+    }
+  });
+
+  lastBufferIntercepted = combined.allItems;
+  displayBufferAnalysisResults(map.getCenter(), bufferRadius, combined);
+
+  toast(`✅ ${count} buffers generados en todas las sedes`);
+  setTimeout(noToast, 2200);
+}
+
+// ── CÁLCULO DE INTERSECCIÓN ESPACIAL (PUNTOS Y POLÍGONOS) ──
+let lastBufferIntercepted = [];
+
+function geomIntersectsBuffer(geometry, centerLatLng, radius) {
+  if (!geometry || !geometry.coordinates) return false;
+  const type = geometry.type;
+
+  if (type === 'Point') {
+    const lng = geometry.coordinates[0];
+    const lat = geometry.coordinates[1];
+    return map.distance(centerLatLng, L.latLng(lat, lng)) <= radius;
+  }
+
+  if (type === 'MultiPoint') {
+    return geometry.coordinates.some(c => map.distance(centerLatLng, L.latLng(c[1], c[0])) <= radius);
+  }
+
+  function checkRing(ring) {
+    if (!ring || ring.length < 3) return false;
+    for (let i = 0; i < ring.length; i++) {
+      const pt = ring[i];
+      if (map.distance(centerLatLng, L.latLng(pt[1], pt[0])) <= radius) return true;
+    }
+    const cLat = centerLatLng.lat;
+    const cLng = centerLatLng.lng;
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0], yi = ring[i][1];
+      const xj = ring[j][0], yj = ring[j][1];
+      const intersect = ((yi > cLat) !== (yj > cLat)) &&
+                        (cLng < (xj - xi) * (cLat - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    if (inside) return true;
+
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const p1 = ring[j], p2 = ring[i];
+      const midLat = (p1[1] + p2[1]) / 2;
+      const midLng = (p1[0] + p2[0]) / 2;
+      if (map.distance(centerLatLng, L.latLng(midLat, midLng)) <= radius) return true;
+    }
+    return false;
+  }
+
+  if (type === 'Polygon') {
+    return geometry.coordinates.some(ring => checkRing(ring));
+  }
+
+  if (type === 'MultiPolygon') {
+    return geometry.coordinates.some(poly => poly.some(ring => checkRing(ring)));
+  }
+
+  if (type === 'LineString') {
+    return geometry.coordinates.some(pt => map.distance(centerLatLng, L.latLng(pt[1], pt[0])) <= radius);
+  }
+
+  if (type === 'MultiLineString') {
+    return geometry.coordinates.some(line => line.some(pt => map.distance(centerLatLng, L.latLng(pt[1], pt[0])) <= radius));
+  }
+
+  return false;
+}
+
+function runBufferAnalysis(centerLatLng, radius) {
+  const targetFilter = document.getElementById('buf-target-layer')?.value || 'all';
+
+  let layersToCheck = [];
+  if (targetFilter === 'all') {
+    const activeIds = Object.keys(lyr).filter(k => map.hasLayer(lyr[k]));
+    layersToCheck = activeIds.length ? activeIds : Object.keys(raw);
+    if (!layersToCheck.length) layersToCheck = ['colonias', 'sedes'];
+  } else if (targetFilter === 'points') {
+    layersToCheck = ['sedes', 'localidades', 'lugares', 'nucleos'];
+  } else if (targetFilter === 'polygons') {
+    layersToCheck = ['colonias', 'r_agebs', 'loc_poligono', 'manzanas', 'municipios'];
+  } else {
+    layersToCheck = [targetFilter];
+  }
+
+  const results = {
+    totalPoints: 0,
+    totalPolygons: 0,
+    byLayer: {},
+    allItems: []
+  };
+
+  layersToCheck.forEach(id => {
+    const data = raw[id];
+    if (!data || !data.features) return;
+
+    const layerCfg = CFG[id] || { label: id, color: '#e4007c' };
+    const intercepted = [];
+
+    data.features.forEach(f => {
+      if (f.geometry && geomIntersectsBuffer(f.geometry, centerLatLng, radius)) {
+        const name = f.properties?.colonia || f.properties?.sede || f.properties?.nom_loc || f.properties?.lugar || f.properties?.cve_ageb || f.properties?.cve_mza || f.properties?.nombre || 'Elemento';
+        const isPoint = f.geometry.type.includes('Point');
+        const item = {
+          layerId: id,
+          layerLabel: layerCfg.label,
+          name: name,
+          isPoint: isPoint,
+          properties: f.properties
+        };
+        intercepted.push(item);
+        results.allItems.push(item);
+      }
+    });
+
+    if (intercepted.length > 0) {
+      const isPoint = intercepted[0].isPoint;
+      if (isPoint) results.totalPoints += intercepted.length;
+      else results.totalPolygons += intercepted.length;
+
+      results.byLayer[id] = {
+        label: layerCfg.label,
+        color: layerCfg.color,
+        isPoint: isPoint,
+        count: intercepted.length,
+        items: intercepted
+      };
+    }
+  });
+
+  lastBufferIntercepted = results.allItems;
+  return results;
+}
+
+function displayBufferAnalysisResults(centerLatLng, radius, results) {
+  const box = document.getElementById('buf-stats-box');
+  const badge = document.getElementById('buf-total-badge');
+  const content = document.getElementById('buf-stats-content');
+  const breakdown = document.getElementById('buf-stats-breakdown');
+  if (!box) return;
+
+  box.style.display = 'block';
+
+  const total = results.totalPoints + results.totalPolygons;
+  if (badge) badge.innerText = `${total} interceptados`;
+
+  const radStr = radius >= 1000 ? (radius / 1000).toFixed(1) + ' km' : radius + ' m';
+
+  let htmlContent = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0 10px">
+      <div style="background:rgba(255,255,255,.05);padding:8px 10px;border-radius:8px;border-left:3px solid #2d7ff9">
+        <div style="font-size:9.5px;color:#94a3b8;font-weight:700;text-transform:uppercase">📍 Puntos</div>
+        <div style="font-size:18px;font-weight:900;color:#fff">${results.totalPoints}</div>
+      </div>
+      <div style="background:rgba(255,255,255,.05);padding:8px 10px;border-radius:8px;border-left:3px solid #e4007c">
+        <div style="font-size:9.5px;color:#94a3b8;font-weight:700;text-transform:uppercase">🗺️ Polígonos</div>
+        <div style="font-size:18px;font-weight:900;color:#fff">${results.totalPolygons}</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#94a3b8">Radio: <strong style="color:#fff">${radStr}</strong> · Centro: [${centerLatLng.lat.toFixed(3)}, ${centerLatLng.lng.toFixed(3)}]</div>
+  `;
+  if (content) content.innerHTML = htmlContent;
+
+  let breakdownHtml = '';
+  const layerKeys = Object.keys(results.byLayer);
+  if (!layerKeys.length) {
+    breakdownHtml = '<div style="font-size:11px;color:#64748b;font-style:italic">No se detectaron entidades en el radio analizado. Enciende capas en el menú lateral para mayor análisis.</div>';
+  } else {
+    layerKeys.forEach(k => {
+      const l = results.byLayer[k];
+      const sampleNames = l.items.slice(0, 3).map(it => it.name).join(', ');
+      const more = l.items.length > 3 ? ` (+${l.items.length - 3})` : '';
+      breakdownHtml += `
+        <div style="background:rgba(0,0,0,.25);padding:6px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.06)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;font-weight:700;color:${l.color}">
+              ${l.isPoint ? '📍' : '🗺️'} ${l.label}
+            </span>
+            <span style="font-size:11px;font-weight:900;color:#fff">${l.count}</span>
+          </div>
+          <div style="font-size:10px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px" title="${sampleNames}">
+            ${sampleNames}${more}
+          </div>
+        </div>
+      `;
+    });
+  }
+  if (breakdown) breakdown.innerHTML = breakdownHtml;
+}
+
+map.on('click', function(e) {
+  const pBuffer = document.getElementById('p-buffer');
+  const isBufferOpen = pBuffer && (pBuffer.dataset.state === 'expanded' || window.getComputedStyle(pBuffer).display !== 'none');
+  if (!isBufferOpen || bufferMode !== 'click') return;
+
+  const latlng = e.latlng;
+
+  const circle = L.circle(latlng, {
+    radius: bufferRadius,
+    color: '#e4007c',
+    fillColor: '#e4007c',
+    fillOpacity: 0.22,
+    weight: 2,
+    dashArray: '5, 5'
+  }).addTo(bufferLayerGroup);
+
+  L.circleMarker(latlng, {
+    radius: 4,
+    color: '#ffffff',
+    fillColor: '#e4007c',
+    fillOpacity: 1,
+    weight: 2
+  }).addTo(bufferLayerGroup);
+
+  const results = runBufferAnalysis(latlng, bufferRadius);
+  displayBufferAnalysisResults(latlng, bufferRadius, results);
+
+  const radStr = bufferRadius >= 1000 ? (bufferRadius/1000).toFixed(1) + ' km' : bufferRadius + ' m';
+  const popupContent = `
+    <div style="font-family:'Inter',sans-serif;padding:4px">
+      <div style="font-size:11px;font-weight:800;color:#e4007c;text-transform:uppercase">Área de Influencia</div>
+      <div style="font-size:14px;font-weight:800;color:#fff;margin:2px 0 4px">Radio: ${radStr}</div>
+      <div style="font-size:11.5px;color:#94a3b8;line-height:1.4">
+        📍 Puntos en radio: <strong style="color:#2d7ff9">${results.totalPoints}</strong><br>
+        🗺️ Polígonos intersectados: <strong style="color:#e4007c">${results.totalPolygons}</strong><br>
+        Centro: [${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}]
+      </div>
+    </div>
+  `;
+  circle.bindPopup(popupContent).openPopup();
+});
+
+document.getElementById('btn-buf-exp-csv')?.addEventListener('click', function() {
+  if (!lastBufferIntercepted.length) {
+    alert('No hay elementos interceptados para exportar. Haz clic en el mapa para trazar un buffer.');
+    return;
+  }
+  let csv = '\uFEFF';
+  csv += 'Capa,Tipo_Geometria,Nombre_Elemento,Radio_Buffer_Metros\n';
+  lastBufferIntercepted.forEach(it => {
+    csv += `"${it.layerLabel}","${it.isPoint ? 'Punto' : 'Polígono'}","${(it.name || '').replace(/"/g, '""')}",${bufferRadius}\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `Buffer_${bufferRadius}m_Elementos_Interceptados.csv`;
+  link.click();
+});
+
+document.getElementById('btn-buf-clear')?.addEventListener('click', function() {
+  bufferLayerGroup.clearLayers();
+  lastBufferIntercepted = [];
+  const box = document.getElementById('buf-stats-box');
+  if (box) box.style.display = 'none';
+  toast('Áreas de influencia eliminadas');
+  setTimeout(noToast, 1200);
+});
+
+/* ── CARGA INICIAL (Capas apagadas al inicio) ── */
+function init(){
+  updateChips();
+}
+init();
+
+})();
+</script>
+</body>
+</html>
