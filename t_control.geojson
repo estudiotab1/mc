@@ -1,0 +1,16 @@
+{
+"type": "FeatureCollection",
+"name": "t_control",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "concepto": "lista", "valor": 6077, "nota": "Beneficiarias en la lista, regla A de identificación" }, "geometry": null },
+{ "type": "Feature", "properties": { "concepto": "centro", "valor": 5977, "nota": "Asignadas a una localidad de Centro" }, "geometry": null },
+{ "type": "Feature", "properties": { "concepto": "otros_mun", "valor": 26, "nota": "Residencia anotada en otro municipio" }, "geometry": null },
+{ "type": "Feature", "properties": { "concepto": "sin_dato", "valor": 39, "nota": "Sin dato de residencia" }, "geometry": null },
+{ "type": "Feature", "properties": { "concepto": "sin_resolv", "valor": 35, "nota": "Texto de residencia que no se pudo asignar" }, "geometry": null },
+{ "type": "Feature", "properties": { "concepto": "f18_mun", "valor": 256610, "nota": "Mujeres de 18+ en Centro, renglón municipal del ITER" }, "geometry": null },
+{ "type": "Feature", "properties": { "concepto": "fem_mun", "valor": 353527, "nota": "Mujeres en Centro, renglón municipal del ITER" }, "geometry": null },
+{ "type": "Feature", "properties": { "concepto": "f18_vhsa", "valor": 135580, "nota": "Mujeres de 18+ en Villahermosa, ITER" }, "geometry": null },
+{ "type": "Feature", "properties": { "concepto": "f18_resto", "valor": 121030, "nota": "Mujeres de 18+ en el resto del municipio" }, "geometry": null }
+]
+}
